@@ -1,4 +1,3 @@
-const names = ["chips", "hamburger", "ice cream", "hot dog", "pizza"];
 const margin = {top: 0, right: 30, bottom: 90, left: 80};
 const animate = {active: false, duration: 1000, delay: 50};
 const barPadding = 0.3;
@@ -93,8 +92,8 @@ Promise.all([
 	); // kWh/km
 
 	// Electricity Production Emissions (gCo2e/kWh produced)
-	const minCountryEmissions = emissionsByCountry[0];
-	const maxCountryEmissions = emissionsByCountry.at(-2); // Exclude Kosovo
+	const minCountryEmissions = emissionsByCountry[1];
+	const maxCountryEmissions = emissionsByCountry.at(-5);
 	const UKEmissions = emissionsByCountry.filter((entry) => entry["Country"] === "United Kingdom")[0];
 	const EUEmissions = emissionsByCountry.filter((entry) => entry["Country"] === "European Union - 27 countries (from 2020)")[0];
 
@@ -129,38 +128,38 @@ Promise.all([
 
 	const originalData = [
 		{
-			type: "Diesel Vehicle",
+			type: "Diesel",
 			manufacture: conventionalVehicleProductionEmissionsPerKm,
 			fuel: dieselUpstreamPerKm,
 			exhaust: drivingEmissionsByVehicleType.Diesel,
 		},
 		{
-			type: "Petrol Vehicle",
+			type: "Petrol",
 			manufacture: conventionalVehicleProductionEmissionsPerKm,
 			fuel: petrolUpstreamPerKm,
 			exhaust: drivingEmissionsByVehicleType.Petrol,
 		},
 		{type: ""},
 		{
-			type: "Electric Vehicle (" + maxCountryEmissions.Country + ")",
+			type: maxCountryEmissions.Country,
 			manufacture: electricVehicleProductionEmissionsPerKm,
 			battery: batteryEmissionsPerKm,
 			fuel: electricityConsumptionByVehicleType.Electricity * maxCountryEmissions.TotalEmissions,
 		},
 		{
-			type: "Electric Vehicle (" + minCountryEmissions.Country + ")",
+			type: minCountryEmissions.Country,
 			manufacture: electricVehicleProductionEmissionsPerKm,
 			battery: batteryEmissionsPerKm,
 			fuel: electricityConsumptionByVehicleType.Electricity * minCountryEmissions.TotalEmissions,
 		},
 		{
-			type: "Electric Vehicle (UK)",
+			type: "UK",
 			manufacture: electricVehicleProductionEmissionsPerKm,
 			battery: batteryEmissionsPerKm,
 			fuel: electricityConsumptionByVehicleType.Electricity * UKEmissions.TotalEmissions,
 		},
 		{
-			type: "Electric Vehicle (EU-average)",
+			type: "EU-average",
 			manufacture: electricVehicleProductionEmissionsPerKm,
 			battery: batteryEmissionsPerKm,
 			fuel: electricityConsumptionByVehicleType.Electricity * EUEmissions.TotalEmissions,
@@ -211,13 +210,13 @@ Promise.all([
 			g
 				.selectAll(".tick text")
 				.attr("class", "axisTick")
-				.style("text-anchor", "end")
-				.attr("dx", "-.2em")
-				.attr("dy", ".6em")
-				.attr("transform", "rotate(-25)")
-		);
+				.style("text-anchor", "center")
+				// .attr("dx", "-.2em")
+				// .attr("dy", ".6em")
+				// .attr("transform", "rotate(-25)"))
+	);
 
-	// Create x-axis
+	// Create y-axis
 	svg.select(".y-axis")
 		.attr("transform", `translate(${margin.left}, 0)`)
 		.call(d3.axisLeft(yScale).ticks(7))

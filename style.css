@@ -6,9 +6,6 @@
 #ffa600
  */
 
-.barchart {
-}
-
 #chart1 {
 	height: 20rem;
 	width: 30rem;
@@ -17,7 +14,7 @@
 #chart1 .barLabels,
 #chart1 .axisTick,
 #chart1 .legendMark {
-	font-family: "Proxima Nova", "Helvetica Neue", "Open Sans";
+	font-family: "Proxima Nova", "Helvetica Neue", "Open Sans", sans-serif;
 	font-size: 1rem;
 }
 
@@ -26,8 +23,4 @@ body {
 	flex-direction: row;
 	column-gap: 2em;
 	flex-wrap: wrap;
-}
-
-text.label {
-	font-family: Arial, Helvetica, sans-serif;
 }
