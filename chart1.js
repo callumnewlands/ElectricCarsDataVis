@@ -1,10 +1,3 @@
-const margin = {top: 0, right: 30, bottom: 90, left: 80};
-const animate = {active: false, duration: 1000, delay: 50};
-const barPadding = 0.3;
-const scale = 0.9;
-const height = 300 / scale;
-const width = 500 / scale;
-
 const toFloat = (s) => parseFloat(s.replaceAll(",", ""));
 const average = (...vs) => vs.reduce((a, b) => a + b) / vs.length || 0;
 
@@ -47,6 +40,14 @@ Promise.all([
 		ElectricityConsumption: toFloat(data["wh/km"]) || 0,
 	})),
 ]).then((files) => {
+
+	const margin = {top: 0, right: 30, bottom: 10, left: 80};
+	const animate = {active: false, duration: 1000, delay: 50};
+	const barPadding = 0.3;
+	const scale = 0.9;
+	const height = 300 / scale;
+	const width = 500 / scale;
+
 	const medianEmissionsByTechnology = files[1].filter((d) => d["Field"] === "Lifecycle Emissions Med")[0]; // gCo2eq/kWh
 
 	const emissionsByCountry = files[0]
@@ -82,7 +83,7 @@ Promise.all([
 	const electricityConsumptionByVehicleType = files[2].reduce((grouped, v) => {
 		grouped[v.Fuel] = grouped[v.Fuel]
 			? {sum: grouped[v.Fuel].sum + v.ElectricityConsumption, count: grouped[v.Fuel].count + 1}
-			: {sum: v.Emissions, count: 1};
+			: {sum: v.ElectricityConsumption, count: 1};
 		return grouped;
 	}, {});
 	Object.keys(electricityConsumptionByVehicleType).forEach(
@@ -193,7 +194,7 @@ Promise.all([
 		Object.entries(originalData[0])
 			.filter((entry) => entry[0] !== "type")
 			.map((entry) => entry[1])
-			.reduce((a, b) => a + b) || 0;
+			.reduce((a, b) => a + b) + 5 || 0;
 
 	const yScale = d3
 		.scaleLinear()
@@ -279,7 +280,7 @@ Promise.all([
 			.style("fill", colorScale(r));
 		svg.append("text")
 			.attr("x", width - legendWidth + 10)
-			.attr("y", 10 + 20 * i)
+			.attr("y", 11 + 20.5 * i)
 			.text(categoryLabels[i])
 			.attr("class", "legendMark")
 			.attr("alignment-baseline", "middle");

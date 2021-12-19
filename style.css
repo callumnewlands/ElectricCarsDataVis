@@ -6,16 +6,20 @@
 #ffa600
  */
 
-#chart1 {
+#chart1, #chart2 {
 	height: 20rem;
 	width: 30rem;
 }
 
-#chart1 .barLabels,
-#chart1 .axisTick,
-#chart1 .legendMark {
+.barLabels,
+.axisTick,
+.legendMark {
 	font-family: "Proxima Nova", "Helvetica Neue", "Open Sans", sans-serif;
 	font-size: 1rem;
+}
+
+#chart2 .x-axis .axisTick {
+	font-size: 0.85rem;
 }
 
 body {
