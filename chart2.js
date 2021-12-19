@@ -44,7 +44,9 @@ Promise.all([
 		return grouped;
 	}, {});
 	Object.keys(electricityConsumptionByVehicleType).forEach(
-		(k) => (electricityConsumptionByVehicleType[k] = electricityConsumptionByVehicleType[k].sum / electricityConsumptionByVehicleType[k].count  / 1000)
+		(k) =>
+			(electricityConsumptionByVehicleType[k] =
+				electricityConsumptionByVehicleType[k].sum / electricityConsumptionByVehicleType[k].count / 1000)
 	); // kWh/km
 
 	const averageElectricityConsumption = electricityConsumptionByVehicleType.Electricity; // kWh / km;
@@ -102,7 +104,7 @@ Promise.all([
 		.append("path")
 		.datum(fuelData)
 		.attr("fill", "none")
-		.attr("stroke", "#bc5090")
+		.attr("stroke", colours[0])
 		.attr("stroke-width", 1.5)
 		.attr(
 			"d",
@@ -117,7 +119,7 @@ Promise.all([
 		.append("path")
 		.datum(fuelData)
 		.attr("fill", "none")
-		.attr("stroke", "#003f5c")
+		.attr("stroke", colours[1])
 		.attr("stroke-width", 1.5)
 		.attr(
 			"d",
@@ -133,7 +135,7 @@ Promise.all([
 		.append("path")
 		.datum(files[2])
 		.attr("fill", "none")
-		.attr("stroke", "#ffa600")
+		.attr("stroke", colours[2])
 		.attr("stroke-width", 1.5)
 		.attr(
 			"d",
@@ -143,8 +145,7 @@ Promise.all([
 				.y((d) => yScale(d.UnitCost * averageElectricityConsumption))
 		);
 
-
-	const categories = ["Diesel", "Petrol", "Electric"];
+	const categories = ["Petrol", "Diesel", "Electric"];
 
 	// Legend
 	const legendWidth = 100;
@@ -153,7 +154,7 @@ Promise.all([
 			.attr("cx", width - legendWidth)
 			.attr("cy", 20 * i)
 			.attr("r", 6)
-			.style("fill", ["#003f5c", "#bc5090", "#ffa600"][i]);
+			.style("fill", colours[i]);
 		svg.append("text")
 			.attr("x", width - legendWidth + 10)
 			.attr("y", 1 + 20.5 * i)

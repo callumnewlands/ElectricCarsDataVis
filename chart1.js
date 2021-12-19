@@ -1,5 +1,6 @@
 const toFloat = (s) => parseFloat(s.replaceAll(",", ""));
 const average = (...vs) => vs.reduce((a, b) => a + b) / vs.length || 0;
+const colours = ["#003f5c", "#bc5090", "#ffa600", "#58508d", "#ff6361"];
 
 Promise.all([
 	d3.csv("datasources/eurostat-2019-cleaned.csv", null, (data) => ({
@@ -201,7 +202,7 @@ Promise.all([
 		.domain([0, maxY])
 		.rangeRound([height - margin.bottom, margin.top]);
 
-	const colorScale = d3.scaleOrdinal().range(["#003f5c", "#bc5090", "#ffa600", "#58508d", "#ff6361"]);
+	const colorScale = d3.scaleOrdinal().range(colours);
 
 	// Create x-axis
 	svg.select(".x-axis")
