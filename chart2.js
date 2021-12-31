@@ -53,9 +53,12 @@ Promise.all([
 	const averagePetrolConsumption = fuelConsumptionByVehicleType.Petrol; // litres / km
 	const averageDieselConsumption = fuelConsumptionByVehicleType.Diesel; // litres / km
 
+	const [xmin, xmax] = d3.extent(fuelData, (d) => d.Date);
+	xmax.setDate(xmax.getDate() - 13)
+
 	var xScale = d3
 		.scaleTime()
-		.domain(d3.extent(fuelData, (d) => d.Date))
+		.domain([xmin, xmax])
 		.range([margin.left, width - margin.right]);
 
 	const maxY = d3.max(fuelData, (data) => Math.max(data.Diesel * averageDieselConsumption, data.Petrol * averagePetrolConsumption)) + 1;
@@ -79,13 +82,13 @@ Promise.all([
 	// Create x-axis
 	svg.select(".x-axis")
 		.attr("transform", `translate(0,${height - margin.bottom})`)
-		.call(d3.axisBottom(xScale))
+		.call(d3.axisBottom(xScale).tickSizeOuter(0))
 		.call((g) => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "center"));
 
 	// Create y-axis
 	svg.select(".y-axis")
 		.attr("transform", `translate(${margin.left}, 0)`)
-		.call(d3.axisLeft(yScale))
+		.call(d3.axisLeft(yScale).tickSizeOuter(0))
 		.call((g) => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "end"))
 		.call((g) =>
 			g
@@ -158,6 +161,138 @@ Promise.all([
 		svg.append("text")
 			.attr("x", width - legendWidth + 10)
 			.attr("y", 1 + 20.5 * i)
+			.text(r)
+			.attr("class", "legendMark")
+			.attr("alignment-baseline", "middle");
+	});
+
+	// ===================================================================================================================
+	//													Chart 2B
+	// ===================================================================================================================
+
+	// https://ev-database.uk/cheatsheet/price-electric-car
+	const averageElectricVehicleCost = 48561; // £
+	// Cost of Vauxhall Corsa (top selling car 2021)
+	// TODO: source for best selling
+	// https://www.vauxhall.co.uk/
+	const averagePetrolVehicleCost = 17015; // £
+	// Cost of BMW 318d M Sport Saloon
+	// TODO: Not sure if this is the best selling
+	// https://configure.bmw.co.uk/
+	const averageDiselVehicleCost = 38905; // £
+
+	// TODO: better source (?)
+	// https://www.rac.co.uk/drive/electric-cars/charging/how-long-do-electric-car-batteries-last/
+	// also "the batteries in all electric cars sold in the U.S. are covered under warranty for at least 8 years or 100,000 miles"
+	// Consumer Reports estimates the average EV battery pack’s lifespan to be at around 200,000 miles
+	// https://www.myev.com/research/ev-101/how-long-should-an-electric-cars-battery-last
+	const averageElectricLifespan = 100000 * 1.60934; // km
+
+	// TODO: source
+	// Most modern cars have a design life of at least 150,000 miles
+	// https://www.autoexpress.co.uk/car-news/99536/high-mileage-cars-should-you-buy-one
+	const averagePetrolLifespan = averageElectricLifespan;
+	const averageDieselLifespan = averageElectricLifespan;
+
+	const adjustedFuelData = fuelData.map((dp) => ({
+		Date: dp.Date,
+		Diesel: dp.Diesel + (averageDiselVehicleCost * 100) / averageDieselLifespan,
+		Petrol: dp.Petrol + (averagePetrolVehicleCost * 100) / averagePetrolLifespan,
+	}));
+
+	const electricFuelData = files[2].map((dp) => ({
+		Year: dp.Year,
+		UnitCost: dp.UnitCost + (averageElectricVehicleCost * 100) / averageElectricLifespan,
+	}));
+
+	const svgB = d3
+		.select("#chart2B")
+		.append("svg")
+		.attr("viewBox", `0 0 ${width} ${height}`) // Makes svg scale responsively
+		.attr("width", "100%")
+		.attr("height", "100%");
+
+	svgB.append("g").attr("class", "plot-area").attr("width", width);
+	svgB.append("g").attr("class", "x-axis");
+	svgB.append("g").attr("class", "y-axis");
+
+	// Create x-axis
+	svgB.select(".x-axis")
+		.attr("transform", `translate(0,${height - margin.bottom})`)
+		.call(d3.axisBottom(xScale).tickSizeOuter(0))
+		.call((g) => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "center"));
+
+	// Create y-axis
+	svgB.select(".y-axis")
+		.attr("transform", `translate(${margin.left}, 0)`)
+		.call(d3.axisLeft(yScale).tickSizeOuter(0))
+		.call((g) => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "end"))
+		.call((g) =>
+			g
+				.append("text")
+				.attr("x", 0)
+				.attr("y", -50)
+				.attr("class", "axisTick")
+				.attr("fill", "currentColor")
+				.attr("text-anchor", "center")
+				.text("Vehicle purchase and running cost (pence / km)")
+				.attr("transform", "rotate(-90)")
+		);
+
+	// Petrol Line
+	svgB.select(".plot-area")
+		.append("path")
+		.datum(adjustedFuelData)
+		.attr("fill", "none")
+		.attr("stroke", colours[0])
+		.attr("stroke-width", 1.5)
+		.attr(
+			"d",
+			d3
+				.line()
+				.x((d) => xScale(d.Date))
+				.y((d) => yScale(d.Petrol * averagePetrolConsumption))
+		);
+
+	// Diesel Line
+	svgB.select(".plot-area")
+		.append("path")
+		.datum(adjustedFuelData)
+		.attr("fill", "none")
+		.attr("stroke", colours[1])
+		.attr("stroke-width", 1.5)
+		.attr(
+			"d",
+			d3
+				.line()
+				.x((d) => xScale(d.Date))
+				.y((d) => yScale(d.Diesel * averageDieselConsumption))
+		);
+
+	// Electric Line
+	svgB.select(".plot-area")
+		.append("path")
+		.datum(electricFuelData)
+		.attr("fill", "none")
+		.attr("stroke", colours[2])
+		.attr("stroke-width", 1.5)
+		.attr(
+			"d",
+			d3
+				.line()
+				.x((d) => xScale(d.Year))
+				.y((d) => yScale(d.UnitCost * averageElectricityConsumption))
+		);
+
+	categories.forEach((r, i) => {
+		svgB.append("circle")
+			.attr("cx", width - legendWidth)
+			.attr("cy", -10 + 20 * i)
+			.attr("r", 6)
+			.style("fill", colours[i]);
+		svgB.append("text")
+			.attr("x", width - legendWidth + 10)
+			.attr("y", -10 + 1 + 20.5 * i)
 			.text(r)
 			.attr("class", "legendMark")
 			.attr("alignment-baseline", "middle");

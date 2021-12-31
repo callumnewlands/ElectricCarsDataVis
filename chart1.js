@@ -207,7 +207,7 @@ Promise.all([
 	// Create x-axis
 	svg.select(".x-axis")
 		.attr("transform", `translate(0,${height - margin.bottom})`)
-		.call(d3.axisBottom(xScale).tickValues(xScale.domain().filter((d) => d)))
+		.call(d3.axisBottom(xScale).tickValues(xScale.domain().filter((d) => d)).tickSizeOuter(0))
 		.call((g) =>
 			g
 				.selectAll(".tick text")
@@ -221,7 +221,7 @@ Promise.all([
 	// Create y-axis
 	svg.select(".y-axis")
 		.attr("transform", `translate(${margin.left}, 0)`)
-		.call(d3.axisLeft(yScale).ticks(7))
+		.call(d3.axisLeft(yScale).ticks(7).tickSizeOuter(0))
 		.call((g) => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "end"))
 		.call((g) =>
 			g
