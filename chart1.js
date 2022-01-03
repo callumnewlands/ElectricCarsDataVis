@@ -41,7 +41,6 @@ Promise.all([
 		ElectricityConsumption: toFloat(data["wh/km"]) || 0,
 	})),
 ]).then((files) => {
-
 	const margin = {top: 0, right: 30, bottom: 10, left: 80};
 	const animate = {active: false, duration: 1000, delay: 50};
 	const barPadding = 0.3;
@@ -70,6 +69,27 @@ Promise.all([
 				.reduce((a, b) => a + b),
 		}))
 		.sort((a, b) => a.TotalEmissions - b.TotalEmissions);
+
+// // Console Log for "Poland"'s renewable energy fraction
+// console.log(files[0]
+// 	.map((d) => ({
+// 		Country: d["Country"],
+// 		TotalEmissions: Object.entries(d)
+// 			.filter((entry) => entry[0] !== "Total" && entry[0] !== "Country")
+// 			.map((entry) => {
+// 				const name = entry[0];
+// 				const electricityProdution = entry[1];
+// 				const productionFraction = electricityProdution / d.Total;
+// 				return {
+// 					Technology: name,
+// 					Fraction: productionFraction,
+// 					EmissionsFraction: medianEmissionsByTechnology[name] * productionFraction,
+// 				};
+// 			}),
+// 		}))			.sort((a, b) => a.TotalEmissions - b.TotalEmissions)
+// 		.filter(c => c.Country === "Poland")[0].TotalEmissions.filter(t => t.Technology !== "Combustible").map(t => t.Fraction).reduce((a, b) => a + b)
+		
+// 		);
 
 	const drivingEmissionsByVehicleType = files[2].reduce((grouped, v) => {
 		grouped[v.Fuel] = grouped[v.Fuel]
@@ -207,16 +227,15 @@ Promise.all([
 	// Create x-axis
 	svg.select(".x-axis")
 		.attr("transform", `translate(0,${height - margin.bottom})`)
-		.call(d3.axisBottom(xScale).tickValues(xScale.domain().filter((d) => d)).tickSizeOuter(0))
-		.call((g) =>
-			g
-				.selectAll(".tick text")
-				.attr("class", "axisTick")
-				.style("text-anchor", "center")
-				// .attr("dx", "-.2em")
-				// .attr("dy", ".6em")
-				// .attr("transform", "rotate(-25)"))
-	);
+		.call(
+			d3
+				.axisBottom(xScale)
+				.tickValues(xScale.domain().filter((d) => d))
+				.tickSizeOuter(0)
+		)
+		.call(
+			(g) => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "center")
+		);
 
 	// Create y-axis
 	svg.select(".y-axis")
@@ -231,7 +250,7 @@ Promise.all([
 				.attr("class", "axisTick")
 				.attr("fill", "currentColor")
 				.attr("text-anchor", "center")
-				.text("Emissions per km (C02e/km)")
+				.text("Emissions per km (gC02e/km)")
 				.attr("transform", "rotate(-90)")
 		);
 
@@ -261,6 +280,43 @@ Promise.all([
 		.attr("y2", (d) => yScale(maxY))
 		.attr("stroke", "gray")
 		.attr("stroke-dasharray", 5);
+
+	const averages = originalData.filter((d) => d.type).map((d) => d.manufacture + (d?.battery || d?.exhaust) + d.fuel);
+	const electricAverage = averages.slice(2).reduce((a, b) => a + b) / 4;
+	const conventionalAverage = averages.slice(0, 2).reduce((a, b) => a + b) / 2;
+
+	// Create conventional average line
+	svg.select(".plot-area")
+		.append("line")
+		.attr("x1", xScale(originalData[0].type) - 0.5 * xScale.bandwidth())
+		.attr("x2", xScale(originalData[1].type) + 1.5 * xScale.bandwidth())
+		.attr("y1", yScale(conventionalAverage))
+		.attr("y2", yScale(conventionalAverage))
+		.attr("stroke", "black")
+		.attr("stroke-dasharray", 5);
+	
+	svg.select(".plot-area")
+		.append("text")
+		.attr("x", xScale(originalData[1].type))
+		.attr("y", yScale(conventionalAverage) - 5)
+		.text("Avg: " + Math.round(conventionalAverage))
+
+
+	// Create electric average line
+	svg.select(".plot-area")
+		.append("line")
+		.attr("x1", xScale(originalData[3].type) - 0.5 * xScale.bandwidth())
+		.attr("x2", xScale(originalData[originalData.length - 1].type) + 1.5 * xScale.bandwidth())
+		.attr("y1", yScale(electricAverage))
+		.attr("y2", yScale(electricAverage))
+		.attr("stroke", "black")
+		.attr("stroke-dasharray", 5);
+	
+	svg.select(".plot-area")
+		.append("text")
+		.attr("x", xScale(originalData[originalData.length - 1].type))
+		.attr("y", yScale(electricAverage) - 5)
+		.text("Avg: " + Math.round(electricAverage))
 
 	// Create animation
 	if (animate.active) {
