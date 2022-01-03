@@ -1,17 +1,33 @@
-/* 
-#003f5c
-#58508d
-#bc5090
-#ff6361
-#ffa600
- */
+body {
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+	font-family: "Proxima Nova", "Helvetica Neue", "Open Sans", sans-serif;
+	text-align: center;
+	max-width: min(90vw, 70rem);
+	margin: 2rem auto;
+}
 
- .chartContainer {
-	 width: 100%;
-	 margin-bottom: 2rem;
- }
+h2 {
+	margin-block-end: 1rem;
+	margin-block-start: 0.85;
+}
 
-#chart1, #chart2, #chart2B {
+p {
+	margin-block-start: 0;
+	margin-block-end: 1rem;
+	font-size: 1.1rem;
+	line-height: 1.6rem;
+}
+
+.chartContainer {
+	width: 100%;
+	margin-bottom: 1rem;
+}
+
+#chart1,
+#chart2,
+#chart2B {
 	height: 20rem;
 	width: 30rem;
 	margin-left: auto;
@@ -25,13 +41,7 @@
 	font-size: 1rem;
 }
 
-#chart2 .x-axis .axisTick, #chart2B.x-axis .axisTick {
+#chart2 .x-axis .axisTick,
+#chart2B.x-axis .axisTick {
 	font-size: 0.85rem;
-}
-
-body {
-	display: flex;
-	flex-direction: row;
-	column-gap: 2em;
-	flex-wrap: wrap;
 }
