@@ -21,12 +21,23 @@ Promise.all([
 		UnitCost: toFloat(data["Average variable unit price (£/kWh)"]) * 100, // pence / kWh
 	})),
 ]).then((files) => {
-	const margin = {top: 0, right: 20, bottom: 10, left: 60};
+	const margin = {top: 15, right: 20, bottom: 10, left: 60};
 	const scale = 0.9;
 	const height = 300 / scale;
 	const width = 500 / scale;
 
-	const fuelData = files[0].filter((d) => d.Date >= new Date(2010, 1, 1)); // pence / litre
+	const fullFuelData = files[0].filter((d) => d.Date >= new Date(2010, 1, 1)); // pence / litre
+	const averageFactor = 28; // Number of days to average over
+	const fuelData = [...Array(Math.floor(fullFuelData.length / averageFactor)).keys()].map((i) => {
+		let sumD = 0;
+		let sumP = 0;
+		const N = Math.min(averageFactor, fullFuelData.length - i * averageFactor);
+		for (let n = 0; n < N; n++) {
+			sumD += fullFuelData[i * averageFactor + n].Diesel;
+			sumP += fullFuelData[i * averageFactor + n].Petrol;
+		}
+		return {Date: fullFuelData[i * averageFactor + Math.floor((averageFactor + 1) / 2)].Date, Petrol: sumP / N, Diesel: sumD / N};
+	});
 
 	const fuelConsumptionByVehicleType = files[1].reduce((grouped, v) => {
 		grouped[v.Fuel] = grouped[v.Fuel]
@@ -54,12 +65,13 @@ Promise.all([
 	const averageDieselConsumption = fuelConsumptionByVehicleType.Diesel; // litres / km
 
 	const [xmin, xmax] = d3.extent(fuelData, (d) => d.Date);
-	xmax.setDate(xmax.getDate() - 13)
+	xmax.setDate(xmax.getDate() - 13);
 
+	const legendWidth = 50;
 	var xScale = d3
 		.scaleTime()
 		.domain([xmin, xmax])
-		.range([margin.left, width - margin.right]);
+		.range([margin.left, width - margin.right - legendWidth]);
 
 	const maxY = d3.max(fuelData, (data) => Math.max(data.Diesel * averageDieselConsumption, data.Petrol * averagePetrolConsumption)) + 1;
 
@@ -132,7 +144,6 @@ Promise.all([
 				.y((d) => yScale(d.Diesel * averageDieselConsumption))
 		);
 
-	// TODO: maybe needs a finer-grained data
 	// Electric Line
 	svg.select(".plot-area")
 		.append("path")
@@ -151,20 +162,42 @@ Promise.all([
 	const categories = ["Petrol", "Diesel", "Electric"];
 
 	// Legend
-	const legendWidth = 100;
-	categories.forEach((r, i) => {
-		svg.append("circle")
-			.attr("cx", width - legendWidth)
-			.attr("cy", 20 * i)
-			.attr("r", 6)
-			.style("fill", colours[i]);
-		svg.append("text")
-			.attr("x", width - legendWidth + 10)
-			.attr("y", 1 + 20.5 * i)
-			.text(r)
-			.attr("class", "legendMark")
-			.attr("alignment-baseline", "middle");
-	});
+	// categories.forEach((r, i) => {
+	svg.append("circle")
+		.attr("cx", xScale(fuelData[fuelData.length - 1].Date) + 10)
+		.attr("cy", yScale(fuelData[fuelData.length - 1].Petrol * averagePetrolConsumption))
+		.attr("r", 6)
+		.style("fill", colours[0]);
+	svg.append("text")
+		.attr("x", xScale(fuelData[fuelData.length - 1].Date) + 20)
+		.attr("y", 1 + yScale(fuelData[fuelData.length - 1].Petrol * averagePetrolConsumption))
+		.text("Petrol")
+		.attr("class", "legendMark")
+		.attr("alignment-baseline", "middle");
+	svg.append("circle")
+		.attr("cx", xScale(fuelData[fuelData.length - 1].Date) + 10)
+		.attr("cy", yScale(fuelData[fuelData.length - 1].Diesel * averageDieselConsumption))
+		.attr("r", 6)
+		.style("fill", colours[1]);
+	svg.append("text")
+		.attr("x", xScale(fuelData[fuelData.length - 1].Date) + 20)
+		.attr("y", 1 + yScale(fuelData[fuelData.length - 1].Diesel * averageDieselConsumption))
+		.text("Diesel")
+		.attr("class", "legendMark")
+		.attr("alignment-baseline", "middle");
+	const elecData = files[2];
+	svg.append("circle")
+		.attr("cx", xScale(elecData[0].Year) + 10)
+		.attr("cy", yScale(elecData[0].UnitCost * averageElectricityConsumption))
+		.attr("r", 6)
+		.style("fill", colours[2]);
+	svg.append("text")
+		.attr("x", xScale(elecData[0].Year) + 20)
+		.attr("y", 1 + yScale(elecData[0].UnitCost * averageElectricityConsumption))
+		.text("Electric")
+		.attr("class", "legendMark")
+		.attr("alignment-baseline", "middle");
+	// });
 
 	// ===================================================================================================================
 	//													Chart 2B
@@ -284,17 +317,37 @@ Promise.all([
 				.y((d) => yScale(d.UnitCost * averageElectricityConsumption))
 		);
 
-	categories.forEach((r, i) => {
-		svgB.append("circle")
-			.attr("cx", width - legendWidth)
-			.attr("cy", -10 + 20 * i)
-			.attr("r", 6)
-			.style("fill", colours[i]);
-		svgB.append("text")
-			.attr("x", width - legendWidth + 10)
-			.attr("y", -10 + 1 + 20.5 * i)
-			.text(r)
-			.attr("class", "legendMark")
-			.attr("alignment-baseline", "middle");
-	});
+	svgB.append("circle")
+		.attr("cx", xScale(adjustedFuelData[adjustedFuelData.length - 1].Date) + 10)
+		.attr("cy", yScale(adjustedFuelData[adjustedFuelData.length - 1].Petrol * averagePetrolConsumption) - 3)
+		.attr("r", 6)
+		.style("fill", colours[0]);
+	svgB.append("text")
+		.attr("x", xScale(adjustedFuelData[adjustedFuelData.length - 1].Date) + 20)
+		.attr("y", 1 + yScale(adjustedFuelData[adjustedFuelData.length - 1].Petrol * averagePetrolConsumption) - 3)
+		.text("Petrol")
+		.attr("class", "legendMark")
+		.attr("alignment-baseline", "middle");
+	svgB.append("circle")
+		.attr("cx", xScale(adjustedFuelData[adjustedFuelData.length - 1].Date) + 10)
+		.attr("cy", yScale(adjustedFuelData[adjustedFuelData.length - 1].Diesel * averageDieselConsumption) + 2)
+		.attr("r", 6)
+		.style("fill", colours[1]);
+	svgB.append("text")
+		.attr("x", xScale(adjustedFuelData[adjustedFuelData.length - 1].Date) + 20)
+		.attr("y", 1 + yScale(adjustedFuelData[adjustedFuelData.length - 1].Diesel * averageDieselConsumption) + 2)
+		.text("Diesel")
+		.attr("class", "legendMark")
+		.attr("alignment-baseline", "middle");
+	svgB.append("circle")
+		.attr("cx", xScale(electricFuelData[0].Year) + 10)
+		.attr("cy", yScale(electricFuelData[0].UnitCost * averageElectricityConsumption))
+		.attr("r", 6)
+		.style("fill", colours[2]);
+	svgB.append("text")
+		.attr("x", xScale(electricFuelData[0].Year) + 20)
+		.attr("y", 1 + yScale(electricFuelData[0].UnitCost * averageElectricityConsumption))
+		.text("Electric")
+		.attr("class", "legendMark")
+		.attr("alignment-baseline", "middle");
 });
