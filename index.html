@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<title>D3 Introduction</title>
+		<title>Are Electric Vehicles Viable in 2021?</title>
 		<script src="https://d3js.org/d3.v6.min.js"></script>
 		<link rel="stylesheet" href="style.css" />
 		<script src="chart1.js"></script>
@@ -13,7 +13,7 @@
 
 		<h2>From 2035, the EU have proposed an effective ban on new fossil-fuel cars.</h2>
 		<p>
-			The EU have proposed a 55% cut in CO<sub>2</sub> emissions by 2030 and a 100% cut by 2035. This means that new fossil-fuel (and
+			The EU have proposed a 55% cut in CO<sub>2</sub> emissions by 2030 and a 100% cut by 2035 <sup><a class="ref">euproposal</a></sup>. This means that new fossil-fuel (and
 			hybrid) cars would be unable to be sold within the EU, effectively limiting the market to only sell electric vehicles (EVs). But
 			are these cars actually practical and viable to own and run?
 		</p>
@@ -24,31 +24,51 @@
 			the emissions produced by generating the electricity they need to run. With all of that taken into consideration, are they even
 			better for the environment? Does it depend on the energy production methods being used?
 		</p>
-		<div class="chartContainer"><div id="chart1" class="barchart"></div></div>
+		<div class="chartContainer">
+			<div id="chart1" class="barchart"></div>
+			<div class="sources">Sources: <a class="ref">eurostat</a>, <a class="ref">ipcc</a></div>
+		</div>
 		<p>
-			This chart shows that, on average, electric cars are produce less than 50% of the emissions of conventional vehicles, without
-			even considering the energy production methods used. Poland and Iceland have been chosen as two extremes of energy production,
-			with Poland using 11.4% renewable energy and producing 507 grams of CO<sub>2</sub>-equivalent per kilowatt-hour of electricity
-			produced (gCO<sub>2</sub>/kWh), and Iceland using 99.99% renewable energy and producing 28 gCO<sub>2</sub>/kWh. As can be seen
-			in the chart, even with a high-carbon energy grid like Poland's, the emissions produced are still significantly lower than a
-			conventional vehicle.
+			This chart shows that, on average, electric cars are produce less than 50% of the emissions of conventional vehicles,
+			considering the vehicle and battery manufacture emissions, upstream emissions (fuel and electricity production) and the vehicle
+			exhaust emissions.
+		</p>
+		<p>
+			Poland and Iceland have been chosen as two extremes of carbon-based energy production, with Poland using 11.4% renewable energy
+			and producing 507 grams of CO<sub>2</sub>-equivalent per kilowatt-hour of electricity generated (gCO<sub>2</sub>/kWh), and
+			Iceland using 99.99% renewable energy and producing 28 gCO<sub>2</sub>/kWh. As can be seen, even with a high-carbon energy grid
+			like Poland's, the emissions produced are still significantly lower than a conventional vehicle.
 		</p>
 
 		<h2>2. Are electric vehicles more expensive to run than conventional vehicles?</h2>
-		<div class="chartContainer"><div id="chart2" class="linechart"></div></div>
+		<div class="chartContainer">
+			<div id="chart2" class="linechart"></div>
+			<div class="sources">Sources:</div>
+		</div>
 		<p>This chart shows ...</p>
 
 		<h3>What about their much higher cost-to-buy?</h3>
 		<p>On average, electric cars cost ...</p>
-		<div class="chartContainer"><div id="chart2B" class="linechart"></div></div>
+		<div class="chartContainer">
+			<div id="chart2B" class="linechart"></div>
+			<div class="sources">Sources:</div>
+		</div>
 		<p>This chart shows ...</p>
 
 		<h2>3. How far can electric vehicles batteries travel on a charge?</h2>
 		<p>Current EV batteries can ... That's the distance from ... to ...</p>
 		<p>Why not find out how far you can travel from your home town? Select a city on the map to start:</p>
-		<div class="chartContainer"><div id="chart3" class="mapchart"></div></div>
+		<div class="chartContainer">
+			<div id="chart3" class="mapchart"></div>
+			<div class="sources">Sources:</div>
+		</div>
 
 		<h2>Conclusion</h2>
 		<p></p>
+
+		<h4>Sources:</h4>
+		<div id="sourcesList"></div>
+		<script src="loadSources.js"></script>
+		
 	</body>
 </html>

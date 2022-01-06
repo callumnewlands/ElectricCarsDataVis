@@ -26,6 +26,7 @@ Promise.all([
 	const height = 300 / scale;
 	const width = 500 / scale;
 
+	// Averafe fuel data over a number of days
 	const fullFuelData = files[0].filter((d) => d.Date >= new Date(2010, 1, 1)); // pence / litre
 	const averageFactor = 28; // Number of days to average over
 	const fuelData = [...Array(Math.floor(fullFuelData.length / averageFactor)).keys()].map((i) => {
@@ -38,6 +39,8 @@ Promise.all([
 		}
 		return {Date: fullFuelData[i * averageFactor + Math.floor((averageFactor + 1) / 2)].Date, Petrol: sumP / N, Diesel: sumD / N};
 	});
+
+	// TODO: error shading based on min-max averages
 
 	const fuelConsumptionByVehicleType = files[1].reduce((grouped, v) => {
 		grouped[v.Fuel] = grouped[v.Fuel]

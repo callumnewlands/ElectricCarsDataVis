@@ -25,6 +25,29 @@ p {
 	margin-bottom: 1rem;
 }
 
+.chartContainer .sources {
+	font-size: 0.7rem;
+	text-align: right;
+	width: 30rem;
+	margin: 7px auto auto;
+}
+
+a.ref, #sourcesList a {
+	color: #333333;
+}
+
+a.ref:hover, #sourcesList a:hover {
+	color: #777777;
+}
+
+
+#sourcesList {
+	display: flex;
+	flex-direction: column;
+	row-gap: 1rem;
+	text-align: left;
+}
+
 #chart1,
 #chart2,
 #chart2B {
