@@ -1,10 +1,13 @@
 body {
-	display: flex;
-	flex-direction: column;
 	flex-wrap: wrap;
 	font-family: "Proxima Nova", "Helvetica Neue", "Open Sans", sans-serif;
 	text-align: center;
-	max-width: min(90vw, 70rem);
+}
+
+.container {
+	display: flex;
+	flex-direction: column;
+	max-width: min(90vw, 60rem);
 	margin: 2rem auto;
 }
 
@@ -28,18 +31,18 @@ p {
 .chartContainer .sources {
 	font-size: 0.7rem;
 	text-align: right;
-	width: 30rem;
 	margin: 7px auto auto;
 }
 
-a.ref, #sourcesList a {
+a.ref,
+#sourcesList a {
 	color: #333333;
 }
 
-a.ref:hover, #sourcesList a:hover {
+a.ref:hover,
+#sourcesList a:hover {
 	color: #777777;
 }
-
 
 #sourcesList {
 	display: flex;
@@ -51,10 +54,16 @@ a.ref:hover, #sourcesList a:hover {
 #chart1,
 #chart2,
 #chart2B {
-	height: 20rem;
-	width: 30rem;
+	height: min(24rem, 90vw * 0.66);
 	margin-left: auto;
 	margin-right: auto;
+}
+
+.chartContainer .sources,
+#chart1,
+#chart2,
+#chart2B {
+	width: min(36rem, 90vw);
 }
 
 .barLabels,
