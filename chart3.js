@@ -54,8 +54,10 @@ Promise.all([
 		.attr("width", "100%")
 		.attr("height", "100%");
 
+    const background = svg.append("g").attr("class", "background");
+
 	// Country outlines
-	svg.selectAll(".subunit")
+	background.selectAll(".subunit")
 		.data(countries.features.filter((d) => !excludedRegions.includes(d.id)))
 		.enter()
 		.append("path")
@@ -63,7 +65,7 @@ Promise.all([
 		.attr("d", pathFunction);
 
 	// Boundaries between countries
-	svg.append("path")
+	background.append("path")
 		.datum(topojson.mesh(uk, uk.objects.subunits, (a, b) => a !== b && !excludedRegions.includes(a.id)))
 		.attr("class", "subunit-boundary")
 		.attr("d", pathFunction);
@@ -102,40 +104,64 @@ Promise.all([
 		.style("text-anchor", (d) => (d.geometry.coordinates[0] > -1 ? "start" : "end"))
 		.text((d) => d.properties.name);
 
-    function addTextLabel(d) {
+	function addTextLabel(d, bold=false) {
+        
+        if (bold) {
+            const width = `${.4 * (d.properties.name.length)}em`;
+            const negativeWidth = `${-.42 * (d.properties.name.length)}em`;
+            svg.append("rect")
+			.attr("id", d.properties.name.replaceAll(" ", "_"))
+			.attr("transform", "translate(" + projection(d.geometry.coordinates) + ")")
+			.attr("height", "1em")
+			.attr("width", width)
+			.attr("x", d.geometry.coordinates[0] > -1 ? 5 : negativeWidth )
+            .attr("y", "-.5em")
+            .attr("rx", "4px")
+            .attr("fill", "white")
+			.text(d.properties.name);
+        }
 		svg.append("text")
-			.attr("id", d.properties.name)
+			.attr("id", d.properties.name.replaceAll(" ", "_"))
 			.attr("class", "place-label")
 			.attr("transform", "translate(" + projection(d.geometry.coordinates) + ")")
 			.attr("x", d.geometry.coordinates[0] > -1 ? 6 : -6)
 			.attr("dy", ".35em")
+            .attr(bold ? "font-weight" : undefined, 700)
 			.style("text-anchor", d.geometry.coordinates[0] > -1 ? "start" : "end")
 			.text(d.properties.name);
-    }
+
+	}
 
 	function handleMouseOver(event, d) {
 		d3.select(this)
 			.attr("fill", colours[2])
 			.attr("r", pointSize * 1.8);
-        addTextLabel(d);
+		addTextLabel(d);
 	}
 
 	function handleMouseOut(event, d) {
 		if (selectedCity !== d.properties.name) {
 			d3.select(this).attr("fill", pointFill).attr("r", pointSize);
-			d3.select(`#${d.properties.name}`)?.remove();
+			d3.select(`#${d.properties.name.replaceAll(" ", "_")}`)?.remove();
 		}
 	}
 
 	function handleMouseClick(event, d) {
-        d3.selectAll(`#${selectedCity}`).remove();
+		d3.selectAll(`#${selectedCity?.replaceAll(" ", "_")}`).remove();
+		d3.selectAll(".radius").remove();
 		if (!selectedCity || selectedCity !== d.properties.name) {
 			selectedCity = d.properties.name;
-            addTextLabel(d);
+			background.append("circle")
+				.attr("class", "radius")
+				.attr("transform", "translate(" + projection(d.geometry.coordinates) + ")")
+				.attr("cx", 0)
+				.attr("cy", 0)
+				.attr("r", 100);
+            addTextLabel(d, true);
 		} else {
 			selectedCity = null;
 		}
-        // Update colours and size of place markers
+		// Update colours and size of place markers
 		placePoints
 			.attr("r", (d) => (selectedCity === d.properties.name ? 1.5 : 1) * pointSize)
 			.attr("fill", (d) => (selectedCity === d.properties.name ? colours[1] : pointFill));

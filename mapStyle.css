@@ -37,3 +37,8 @@ text {
   font-size: 10px;
   pointer-events: none;
 }
+
+.radius {
+    fill: #003f5c77;
+    stroke: #003f5c;
+}
