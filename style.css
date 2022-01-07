@@ -55,14 +55,19 @@ a.ref:hover,
 #chart2,
 #chart2B {
 	height: min(24rem, 90vw * 0.66);
-	margin-left: auto;
-	margin-right: auto;
+}
+
+#chart3 {
+	height: 95vh;
+	max-width: 100vw;
 }
 
 .chartContainer .sources,
 #chart1,
 #chart2,
-#chart2B {
+#chart2B{
+	margin-left: auto;
+	margin-right: auto;
 	width: min(36rem, 90vw);
 }
 
