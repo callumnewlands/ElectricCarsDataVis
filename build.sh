@@ -14,6 +14,13 @@ sed -i 's/&/\\\\&/g' out/loadSources-compiled.js
 
 cp index.html out/index.html
 
+# code=$(cat datasources.js)
+# replacement='<script>'$code'</script>'
+# awk -i inplace -v REP="$replacement" '{
+#     sub(/<script src="datasources\.js"><\/script>/, REP);
+#     print;
+# }'  out/index.html
+
 code=$(cat out/chart1-compiled.js)
 replacement='<script>'$code'</script>'
 awk -i inplace -v REP="$replacement" '{

@@ -2,8 +2,11 @@ const toFloat = (s) => parseFloat(s.replaceAll(",", ""));
 const average = (...vs) => vs.reduce((a, b) => a + b) / vs.length || 0;
 const colours = ["#003f5c", "#bc5090", "#ffa600", "#58508d", "#ff6361"];
 
+const toBase64 = (data) => btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+const fromBase64 = (str) => JSON.parse(atob(str));
+
 Promise.all([
-	d3.csv("datasources/eurostat-2019-cleaned.csv", null, (data) => ({
+	fromBase64(eurostat).map((data) => ({
 		Country: data["SIEC (Labels)"],
 		Total: toFloat(data["Total"]), // Gross electricity production (kWh)
 		Combustible: toFloat(data["Combustible fuels"]),
@@ -19,23 +22,22 @@ Promise.all([
 			toFloat(data["Other fuels n.e.c."]),
 	})),
 
-	d3.csv("datasources/ipcc-cleaned.csv", null, (data) => ({
+	fromBase64(ipcc).map((data) => ({
 		Field: data["Technology"],
 		Combustible: average(
-			toFloat(data["Coal—Pulverized "]),
-			toFloat(data["Gas—Combined Cycle"]),
-			toFloat(data["Biomass—cofiring "]),
-			toFloat(data["Biomass—dedicated "])
+			toFloat(data["CoalâPulverized "]),
+			toFloat(data["GasâCombined Cycle"]),
+			toFloat(data["Biomassâcofiring "]),
+			toFloat(data["Biomassâdedicated "])
 		),
 		Hydro: toFloat(data["Hydropower "]),
 		Geothermal: toFloat(data["Geothermal "]),
 		Wind: average(toFloat(data["Wind onshore"]), toFloat(data["Wind offshore"])),
-		Solar: average(toFloat(data["Solar PV—rooftop"]), toFloat(data["Solar PV—utility"])),
+		Solar: average(toFloat(data["Solar PVârooftop"]), toFloat(data["Solar PVâutility"])),
 		Ocean: toFloat(data["Ocean"]),
 		Nuclear: toFloat(data["Nuclear "]),
 	})),
-
-	d3.csv("datasources/Euro_6_latest.csv", null, (data) => ({
+	fromBase64(euroLatest).map((data) => ({
 		Fuel: data["Fuel Type"],
 		Emissions: toFloat(data["WLTP CO2"]) || 0, // gCo2e/km
 		ElectricityConsumption: toFloat(data["wh/km"]) || 0,
@@ -69,27 +71,6 @@ Promise.all([
 				.reduce((a, b) => a + b),
 		}))
 		.sort((a, b) => a.TotalEmissions - b.TotalEmissions);
-
-// // Console Log for "Poland"'s renewable energy fraction
-// console.log(files[0]
-// 	.map((d) => ({
-// 		Country: d["Country"],
-// 		TotalEmissions: Object.entries(d)
-// 			.filter((entry) => entry[0] !== "Total" && entry[0] !== "Country")
-// 			.map((entry) => {
-// 				const name = entry[0];
-// 				const electricityProdution = entry[1];
-// 				const productionFraction = electricityProdution / d.Total;
-// 				return {
-// 					Technology: name,
-// 					Fraction: productionFraction,
-// 					EmissionsFraction: medianEmissionsByTechnology[name] * productionFraction,
-// 				};
-// 			}),
-// 		}))			.sort((a, b) => a.TotalEmissions - b.TotalEmissions)
-// 		.filter(c => c.Country === "Poland")[0].TotalEmissions.filter(t => t.Technology !== "Combustible").map(t => t.Fraction).reduce((a, b) => a + b)
-		
-// 		);
 
 	const drivingEmissionsByVehicleType = files[2].reduce((grouped, v) => {
 		grouped[v.Fuel] = grouped[v.Fuel]
@@ -233,9 +214,7 @@ Promise.all([
 				.tickValues(xScale.domain().filter((d) => d))
 				.tickSizeOuter(0)
 		)
-		.call(
-			(g) => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "center")
-		);
+		.call((g) => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "center"));
 
 	// Create y-axis
 	svg.select(".y-axis")
@@ -294,13 +273,12 @@ Promise.all([
 		.attr("y2", yScale(conventionalAverage))
 		.attr("stroke", "black")
 		.attr("stroke-dasharray", 5);
-	
+
 	svg.select(".plot-area")
 		.append("text")
 		.attr("x", xScale(originalData[1].type))
 		.attr("y", yScale(conventionalAverage) - 5)
-		.text("Avg: " + Math.round(conventionalAverage))
-
+		.text("Avg: " + Math.round(conventionalAverage));
 
 	// Create electric average line
 	svg.select(".plot-area")
@@ -311,12 +289,12 @@ Promise.all([
 		.attr("y2", yScale(electricAverage))
 		.attr("stroke", "black")
 		.attr("stroke-dasharray", 5);
-	
+
 	svg.select(".plot-area")
 		.append("text")
 		.attr("x", xScale(originalData[originalData.length - 1].type))
 		.attr("y", yScale(electricAverage) - 5)
-		.text("Avg: " + Math.round(electricAverage))
+		.text("Avg: " + Math.round(electricAverage));
 
 	// Create animation
 	if (animate.active) {

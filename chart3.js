@@ -2,17 +2,20 @@ const pointFill = "#777";
 
 let selectedCity = null;
 
+// d3.csv("datasources/worldcities.csv").then((data) => console.log(toBase64(data)));
+// console.log(fromBase64(ipcc))
+
 Promise.all([
 	// https://bost.ocks.org/mike/map/uk.json
-	d3.json("datasources/uk.json"),
-	d3.csv("datasources/worldcities.csv", null, (data) => ({
+	fromBase64(ukMap),
+	fromBase64(worldcities).map((data) => ({
 		name: data.city,
 		lat: data.lat,
 		lng: data.lng,
 		population: data.population,
 		country: data.iso3,
 	})),
-	d3.json("datasources/chargepoints.json"),
+	fromBase64(chargepointsData),
 ]).then((files) => {
 	const uk = files[0];
 	const countries = topojson.feature(uk, uk.objects.subunits);
