@@ -1,4 +1,4 @@
-const pointFill = "#111";
+const pointFill = "#777";
 
 let selectedCity = null;
 
@@ -23,6 +23,33 @@ Promise.all([
 		lng = (lng - uk.transform.translate[0]) / uk.transform.scale[0];
 		lat = (lat - uk.transform.translate[1]) / uk.transform.scale[1];
 		return [lng, lat];
+	}
+
+	function latLongDistance(lat1, lon1, lat2, lon2) {
+		// Haversine distance
+
+		const R = 6371e3; // Earths radius in m
+		const phi1 = (lat1 * Math.PI) / 180;
+		const phi2 = (lat2 * Math.PI) / 180;
+		const delPhi = ((lat2 - lat1) * Math.PI) / 180;
+		const delLam = ((lon2 - lon1) * Math.PI) / 180;
+
+		const a =
+			Math.sin(delPhi / 2) * Math.sin(delPhi / 2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(delLam / 2) * Math.sin(delLam / 2);
+		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+		return (R * c) / 1000; // km
+	}
+
+	function isInsideRadius(d, selectedCity) {
+		return (
+			latLongDistance(
+				d.geometry.coordinates[1],
+				d.geometry.coordinates[0],
+				selectedCity.geometry.coordinates[1],
+				selectedCity.geometry.coordinates[0]
+			) < averageRange
+		);
 	}
 
 	const excludedCounties = [
@@ -116,8 +143,8 @@ Promise.all([
 		.attr("transform", (d) => "translate(" + projection(d.geometry.coordinates) + ")")
 		.attr("cx", 0)
 		.attr("cy", 0)
-		.attr("r", 0.5)
-		.attr("fill", "#ff6ec4");
+		.attr("r", 1)
+		.attr("fill", "transparent");
 
 	// ukCities in GeoJson features format
 	const geoUkCities = ukCities.map((c) => ({
@@ -181,27 +208,33 @@ Promise.all([
 
 	function handleMouseOver(event, d) {
 		d3.select(this)
-			.attr("fill", colours[2])
+			.attr("fill", colours[0])
 			.attr("r", pointSize * 1.8);
-		if (selectedCity !== d.properties.name) {
+		if (!selectedCity || selectedCity.properties.name !== d.properties.name) {
 			addTextLabel(d);
 		}
 	}
 
 	function handleMouseOut(event, d) {
-		if (selectedCity !== d.properties.name) {
-			d3.select(this).attr("fill", pointFill).attr("r", pointSize);
+		if (!selectedCity || selectedCity.properties.name !== d.properties.name) {
+			d3.select(this).attr("r", pointSize);
 			d3.select(`#${d.properties.name.replaceAll(" ", "_")}`)?.remove();
-		} else {
-			d3.select(this).attr("fill", colours[4]);
 		}
+		d3.select(this).attr(
+			"fill",
+			selectedCity?.properties.name === d.properties.name
+				? colours[1]
+				: selectedCity && isInsideRadius(d, selectedCity)
+				? "#111"
+				: pointFill
+		);
 	}
 
 	function handleMouseClick(event, d) {
-		d3.selectAll(`#${selectedCity?.replaceAll(" ", "_")}`).remove();
+		d3.selectAll(`#${selectedCity?.properties?.name?.replaceAll(" ", "_")}`).remove();
 		d3.selectAll(".radius").remove();
-		if (!selectedCity || selectedCity !== d.properties.name) {
-			selectedCity = d.properties.name;
+		if (!selectedCity || selectedCity.properties.name !== d.properties.name) {
+			selectedCity = d;
 			const averageRangeLongitude = averageRange / (111.32 * Math.cos(parseFloat((d.geometry.coordinates[0] * Math.PI) / 180)));
 			circlePoints = d3.geoCircle().center(d.geometry.coordinates).radius(averageRangeLongitude);
 			background.append("path").datum(circlePoints).attr("class", "radius").attr("d", pathFunction);
@@ -211,7 +244,15 @@ Promise.all([
 		}
 		// Updates colours and size of all place markers
 		placePoints
-			.attr("r", (d) => (selectedCity === d.properties.name ? 1.5 : 1) * pointSize)
-			.attr("fill", (d) => (selectedCity === d.properties.name ? colours[4] : pointFill));
+			.attr("r", (d) => (selectedCity?.properties.name === d.properties.name ? 2 : 1) * pointSize)
+			.attr("fill", (d) =>
+				selectedCity?.properties.name === d.properties.name
+					? colours[1]
+					: selectedCity && isInsideRadius(d, selectedCity)
+					? "#111"
+					: pointFill
+			);
+		console.log(selectedCity);
+		chargeMarkers.attr("fill", (d) => (selectedCity && isInsideRadius(d, selectedCity) ? "#a8c7a8" : "transparent"));
 	}
 });

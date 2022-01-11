@@ -1,11 +1,5 @@
-/* 
-.subunit.SCT { fill: #ddc; }
-.subunit.WLS { fill: #cdd; }
-.subunit.NIR { fill: #cdc; }
-.subunit.ENG { fill: #dcd; } */
-
 .subunit {
-  fill: #bbddbb77;
+  fill: #bbddbb37;
   stroke: #aaa;
 }
 
@@ -39,6 +33,6 @@ text {
 }
 
 .radius {
-    fill: #003f5c77;
+    fill: #003f5c11;
     stroke: #003f5c;
 }
