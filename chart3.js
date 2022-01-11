@@ -16,7 +16,7 @@ Promise.all([
 ]).then((files) => {
 	const uk = files[0];
 	const countries = topojson.feature(uk, uk.objects.subunits);
-	// const cities = topojson.feature(uk, uk.objects.places);
+	const cities = topojson.feature(uk, uk.objects.places);
 	const excludedRegions = ["NIR", "IRL"];
 
 	function latLongToCoordinates(lat, lng) {
@@ -72,11 +72,13 @@ Promise.all([
 		(c) => c.ChargeDeviceStatus === "In service" && !excludedCounties.includes(c.ChargeDeviceLocation.Address.County)
 	);
 
-	const numCities = 70;
-	const numLabels = 10;
+    const excludedCities = ["Belfast", "Islington", "Tottenham", "Ilford", "Enfield", "Birstall", "Sale", "Wythenshawe", "Romford"]
+
+	const numCities = 50;
+	const numLabels = 12;
 	const pointSize = 3;
 	const ukCities = files[1]
-		.filter((c) => c.country === "GBR" && c.name !== "Belfast")
+		.filter((c) => c.country === "GBR" && !excludedCities.includes(c.name))
 		.sort((a, b) => b.population - a.population)
 		.slice(0, numCities)
 		.map((c) => ({...c, coordinate: [c.lng, c.lat], scaledCoordinate: latLongToCoordinates(c.lat, c.lng)}));
@@ -252,7 +254,32 @@ Promise.all([
 					? "#111"
 					: pointFill
 			);
-		console.log(selectedCity);
 		chargeMarkers.attr("fill", (d) => (selectedCity && isInsideRadius(d, selectedCity) ? "#a8c7a8" : "transparent"));
 	}
+
+	const categories = [
+		{name: "Cities", colour: pointFill, area: false},
+		{name: "Selected City", colour: colours[1], area: false},
+		{name: "Cities reachable on 1 charge", colour: "#111", area: false},
+		{name: "Chargepoints", colour: "#a8c7a8", area: false},
+		{name: `Range on 1 charge (${Math.round(averageRange)}km)`, colour: colours[0], area: true},
+	];
+
+	// Legend
+	const legendWidth = 280;
+    const legendYOffset = 200;
+	categories.forEach((r, i) => {
+		svg.append("circle")
+			.attr("cx", width - legendWidth)
+			.attr("cy", legendYOffset + 20 * i)
+			.attr("r", 6)
+            .style("stroke", r.area ? r.colour : null)
+			.style("fill", r.colour + (r.area ? "33" : ""));
+		svg.append("text")
+			.attr("x", width - legendWidth + 10)
+			.attr("y", legendYOffset + 1 + 20.5 * i)
+			.text(r.name)
+			.attr("class", "legendMark")
+			.attr("alignment-baseline", "middle");
+	});
 });
