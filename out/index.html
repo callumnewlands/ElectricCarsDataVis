@@ -1,0 +1,794 @@
+<!-- TODO: https://stackoverflow.com/questions/42909810/d3-visualization-on-local-machine-without-html-server -->
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Are Electric Vehicles Viable in 2021?</title>
+		<script src="https://d3js.org/d3.v6.min.js"></script>
+		<script src="https://d3js.org/topojson.v1.min.js"></script>
+		<style>
+			body {
+				flex-wrap: wrap;
+				font-family: "Proxima Nova", "Helvetica Neue", "Open Sans", sans-serif;
+				text-align: center;
+			}
+
+			.container {
+				display: flex;
+				flex-direction: column;
+				max-width: min(90vw, 60rem);
+				margin: 2rem auto;
+			}
+
+			h2 {
+				margin-block-end: 1rem;
+				margin-block-start: 0.85;
+			}
+
+			p {
+				margin-block-start: 0;
+				margin-block-end: 1rem;
+				font-size: 1.1rem;
+				line-height: 1.6rem;
+			}
+
+			.chartContainer {
+				width: 100%;
+				margin-bottom: 1rem;
+			}
+
+			.chartContainer .sources {
+				font-size: 0.7rem;
+				text-align: right;
+				margin: 7px auto auto;
+			}
+
+			a.ref,
+			#sourcesList a {
+				color: #333333;
+			}
+
+			a.ref:hover,
+			#sourcesList a:hover {
+				color: #777777;
+			}
+
+			#sourcesList {
+				display: flex;
+				flex-direction: column;
+				row-gap: 1rem;
+				text-align: left;
+			}
+
+			#chart1,
+			#chart2,
+			#chart2B {
+				height: min(24rem, 90vw * 0.66);
+			}
+
+			#chart3 {
+				height: 95vh;
+				max-width: 100vw;
+			}
+
+			.chartContainer .sources,
+			#chart1,
+			#chart2,
+			#chart2B {
+				margin-left: auto;
+				margin-right: auto;
+				width: min(36rem, 90vw);
+			}
+
+			.barLabels,
+			.axisTick,
+			.legendMark {
+				font-family: "Proxima Nova", "Helvetica Neue", "Open Sans", sans-serif;
+				font-size: 1rem;
+			}
+
+			#chart2 .x-axis .axisTick,
+			#chart2B.x-axis .axisTick {
+				font-size: 0.85rem;
+			}
+
+			.subunit {
+				fill: #bbddbb37;
+				stroke: #aaa;
+			}
+
+			.subunit-boundary {
+				fill: none;
+				stroke: #777;
+				stroke-dasharray: 2, 2;
+				stroke-linejoin: round;
+			}
+
+			.subunit-label {
+				fill: #777;
+				fill-opacity: 0.5;
+				font-size: 20px;
+				font-weight: 300;
+				text-anchor: middle;
+			}
+
+			.place {
+				cursor: pointer;
+			}
+
+			.place-label {
+				fill: #111;
+			}
+
+			text {
+				font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+				font-size: 0.9rem;
+				pointer-events: none;
+			}
+
+			.radius {
+				fill: #003f5c11;
+				stroke: #003f5c;
+			}
+		</style>
+		<script>const toFloat = s => parseFloat(s.replaceAll(",", ""));
+
+const average = (...vs) => vs.reduce((a, b) => a + b) / vs.length || 0;
+
+const colours = ["#003f5c", "#bc5090", "#ffa600", "#58508d", "#ff6361"];
+Promise.all([d3.csv("datasources/eurostat-2019-cleaned.csv", null, data => ({
+  Country: data["SIEC (Labels)"],
+  Total: toFloat(data["Total"]),
+  // Gross electricity production (kWh)
+  Combustible: toFloat(data["Combustible fuels"]),
+  Hydro: toFloat(data["Hydro"]),
+  // Pumped Hydro is included in Hydro
+  Geothermal: toFloat(data["Geothermal"]),
+  Wind: toFloat(data["Wind"]),
+  Solar: toFloat(data["Solar"]),
+  Ocean: toFloat(data["Tide, wave, ocean"]),
+  Nuclear: toFloat(data["Nuclear fuels and other fuels n.e.c."]) + toFloat(data["Other fuels n.e.c. - heat from chemical sources"]) + toFloat(data["Other fuels n.e.c."])
+})), d3.csv("datasources/ipcc-cleaned.csv", null, data => ({
+  Field: data["Technology"],
+  Combustible: average(toFloat(data["Coal—Pulverized "]), toFloat(data["Gas—Combined Cycle"]), toFloat(data["Biomass—cofiring "]), toFloat(data["Biomass—dedicated "])),
+  Hydro: toFloat(data["Hydropower "]),
+  Geothermal: toFloat(data["Geothermal "]),
+  Wind: average(toFloat(data["Wind onshore"]), toFloat(data["Wind offshore"])),
+  Solar: average(toFloat(data["Solar PV—rooftop"]), toFloat(data["Solar PV—utility"])),
+  Ocean: toFloat(data["Ocean"]),
+  Nuclear: toFloat(data["Nuclear "])
+})), d3.csv("datasources/Euro_6_latest.csv", null, data => ({
+  Fuel: data["Fuel Type"],
+  Emissions: toFloat(data["WLTP CO2"]) || 0,
+  // gCo2e/km
+  ElectricityConsumption: toFloat(data["wh/km"]) || 0
+}))]).then(files => {
+  const margin = {
+    top: 0,
+    right: 30,
+    bottom: 10,
+    left: 80
+  };
+  const animate = {
+    active: false,
+    duration: 1000,
+    delay: 50
+  };
+  const barPadding = 0.3;
+  const scale = 0.9;
+  const height = 300 / scale;
+  const width = 500 / scale;
+  const medianEmissionsByTechnology = files[1].filter(d => d["Field"] === "Lifecycle Emissions Med")[0]; // gCo2eq/kWh
+
+  const emissionsByCountry = files[0].map(d => ({
+    Country: d["Country"],
+    TotalEmissions: Object.entries(d).filter(entry => entry[0] !== "Total" && entry[0] !== "Country").map(entry => {
+      const name = entry[0];
+      const electricityProdution = entry[1];
+      const productionFraction = electricityProdution / d.Total;
+      return {
+        Technology: name,
+        Fraction: productionFraction,
+        EmissionsFraction: medianEmissionsByTechnology[name] * productionFraction
+      };
+    }).map(val => val.EmissionsFraction).reduce((a, b) => a + b)
+  })).sort((a, b) => a.TotalEmissions - b.TotalEmissions); // // Console Log for "Poland"'s renewable energy fraction
+  // console.log(files[0]
+  // 	.map((d) => ({
+  // 		Country: d["Country"],
+  // 		TotalEmissions: Object.entries(d)
+  // 			.filter((entry) => entry[0] !== "Total" && entry[0] !== "Country")
+  // 			.map((entry) => {
+  // 				const name = entry[0];
+  // 				const electricityProdution = entry[1];
+  // 				const productionFraction = electricityProdution / d.Total;
+  // 				return {
+  // 					Technology: name,
+  // 					Fraction: productionFraction,
+  // 					EmissionsFraction: medianEmissionsByTechnology[name] * productionFraction,
+  // 				};
+  // 			}),
+  // 		}))			.sort((a, b) => a.TotalEmissions - b.TotalEmissions)
+  // 		.filter(c => c.Country === "Poland")[0].TotalEmissions.filter(t => t.Technology !== "Combustible").map(t => t.Fraction).reduce((a, b) => a + b)
+  // 		);
+
+  const drivingEmissionsByVehicleType = files[2].reduce((grouped, v) => {
+    grouped[v.Fuel] = grouped[v.Fuel] ? {
+      sum: grouped[v.Fuel].sum + v.Emissions,
+      count: grouped[v.Fuel].count + 1
+    } : {
+      sum: v.Emissions,
+      count: 1
+    };
+    return grouped;
+  }, {});
+  Object.keys(drivingEmissionsByVehicleType).forEach(k => drivingEmissionsByVehicleType[k] = drivingEmissionsByVehicleType[k].sum / drivingEmissionsByVehicleType[k].count); // gCo2e/km
+
+  const electricityConsumptionByVehicleType = files[2].reduce((grouped, v) => {
+    grouped[v.Fuel] = grouped[v.Fuel] ? {
+      sum: grouped[v.Fuel].sum + v.ElectricityConsumption,
+      count: grouped[v.Fuel].count + 1
+    } : {
+      sum: v.ElectricityConsumption,
+      count: 1
+    };
+    return grouped;
+  }, {});
+  Object.keys(electricityConsumptionByVehicleType).forEach(k => electricityConsumptionByVehicleType[k] = electricityConsumptionByVehicleType[k].sum / electricityConsumptionByVehicleType[k].count / 1000); // kWh/km
+  // Electricity Production Emissions (gCo2e/kWh produced)
+
+  const minCountryEmissions = emissionsByCountry[1];
+  const maxCountryEmissions = emissionsByCountry.at(-5);
+  const UKEmissions = emissionsByCountry.filter(entry => entry["Country"] === "United Kingdom")[0];
+  const EUEmissions = emissionsByCountry.filter(entry => entry["Country"] === "European Union - 27 countries (from 2020)")[0]; // Battery Production Emissions (gCo2e/kWh capacity)
+
+  const batteryEmissions = (106 + 61) / 2 * 1000; // TODO: error bars
+  // % https://www.ivl.se/download/18.14d7b12e16e3c5c36271070/1574923989017/C444.pdf
+  // % https://theicct.org/sites/default/files/publications/EV-life-cycle-GHG_ICCT-Briefing_09022018_vF.pdf
+  // Vehicle Production Emissions (gCo2e/km)
+
+  const electricVehicleProductionEmissionsPerKm = 38; // % Vehicle production emissions: 3.9-5.7 4.8 (median) 	odo{?} (tonne CO	extsubscript{2}e/kg) 38 (g CO	extsubscript{2}e/km) 	odo{Does this apply to conventional vehicles too?}
+  // % https://www.researchgate.net/publication/301937291_The_size_and_range_effect_Lifecycle_greenhouse_gas_emissions_of_electric_vehicles
+  // % https://www.carbonbrief.org/factcheck-how-electric-vehicles-help-to-tackle-climate-change
+  // %  ^ TODO: Secondary Source -- not sure where the 38 came from
+
+  const conventionalVehicleProductionEmissionsPerKm = 46; // %  ^ TODO: Secondary Source -- not sure where the 46 came from
+  // TODO: Average electric vehicle battery guarantee (km)
+
+  const averageElectricVehicleBatteryLifespan = 125000 * 1.60934; // TODO: Average electric vehicle battery capacity (kWh)
+
+  const averageElectricVehicleBatteryCapactity = 83.2; // https://insideevs.com/reviews/344001/compare-evs/
+  // ^ US cars -- is there a better one?
+  // Battery Production Emissions (gCo2e/km)
+
+  const batteryEmissionsPerKm = batteryEmissions * averageElectricVehicleBatteryCapactity / averageElectricVehicleBatteryLifespan;
+  const petrolUpstreamPerKm = drivingEmissionsByVehicleType.Petrol * 0.26; // gCo2e/km
+
+  const dieselUpstreamPerKm = drivingEmissionsByVehicleType.Diesel * 0.28; // gCo2e/km
+  // https://www.nature.com/articles/s41893-020-0488-7.epdf?author_access_token=G9jnKroVkUnPiulAcQQnmtRgN0jAjWel9jnR3ZoTv0OMBHrNGD6k2npei17x4aWWU3THOMEr3_Ss7alTvOroTXMYpu_ZHB_Yt2QAzuEF4jz5ILos1vXSXV4NuIU2Y3ZD9AzYL1nZs6n_uK6EoCVA2w%3D%3D
+
+  const originalData = [{
+    type: "Diesel",
+    manufacture: conventionalVehicleProductionEmissionsPerKm,
+    fuel: dieselUpstreamPerKm,
+    exhaust: drivingEmissionsByVehicleType.Diesel
+  }, {
+    type: "Petrol",
+    manufacture: conventionalVehicleProductionEmissionsPerKm,
+    fuel: petrolUpstreamPerKm,
+    exhaust: drivingEmissionsByVehicleType.Petrol
+  }, {
+    type: ""
+  }, {
+    type: maxCountryEmissions.Country,
+    manufacture: electricVehicleProductionEmissionsPerKm,
+    battery: batteryEmissionsPerKm,
+    fuel: electricityConsumptionByVehicleType.Electricity * maxCountryEmissions.TotalEmissions
+  }, {
+    type: minCountryEmissions.Country,
+    manufacture: electricVehicleProductionEmissionsPerKm,
+    battery: batteryEmissionsPerKm,
+    fuel: electricityConsumptionByVehicleType.Electricity * minCountryEmissions.TotalEmissions
+  }, {
+    type: "UK",
+    manufacture: electricVehicleProductionEmissionsPerKm,
+    battery: batteryEmissionsPerKm,
+    fuel: electricityConsumptionByVehicleType.Electricity * UKEmissions.TotalEmissions
+  }, {
+    type: "EU-average",
+    manufacture: electricVehicleProductionEmissionsPerKm,
+    battery: batteryEmissionsPerKm,
+    fuel: electricityConsumptionByVehicleType.Electricity * EUEmissions.TotalEmissions
+  }];
+  const categories = ["manufacture", "battery", "fuel", "exhaust"];
+  const categoryLabels = ["Vehicle Manufacture", "Battery Production", "Upstream Emissions", "Exhaust Emissions"];
+  const data = d3.stack().keys(categories)(originalData); // data = emissionsByCountry.map((d) => ({x: d.Country, y: d.TotalEmissions})); //.sort((a, b)=> a.y - b.y)
+
+  const svg = d3.select("#chart1").append("svg").attr("viewBox", `0 0 ${width} ${height}`) // Makes svg scale responsively
+  .attr("width", "100%").attr("height", "100%");
+  svg.append("g").attr("class", "plot-area").attr("width", width);
+  svg.append("g").attr("class", "x-axis");
+  svg.append("g").attr("class", "y-axis");
+  const xScale = d3.scaleBand().domain(originalData.map(d => d.type)).range([margin.left, width - margin.right]).padding(barPadding);
+  const maxY = Object.entries(originalData[0]).filter(entry => entry[0] !== "type").map(entry => entry[1]).reduce((a, b) => a + b) + 5 || 0;
+  const yScale = d3.scaleLinear().domain([0, maxY]).rangeRound([height - margin.bottom, margin.top]);
+  const colorScale = d3.scaleOrdinal().range(colours); // Create x-axis
+
+  svg.select(".x-axis").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(xScale).tickValues(xScale.domain().filter(d => d)).tickSizeOuter(0)).call(g => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "center")); // Create y-axis
+
+  svg.select(".y-axis").attr("transform", `translate(${margin.left}, 0)`).call(d3.axisLeft(yScale).ticks(7).tickSizeOuter(0)).call(g => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "end")).call(g => g.append("text").attr("x", 0).attr("y", -50).attr("class", "axisTick").attr("fill", "currentColor").attr("text-anchor", "center").text("Emissions per km (gC02e/km)").attr("transform", "rotate(-90)"));
+  const bars = svg.select(".plot-area").selectAll("g.series").data(data).join("g").classed("series", true).style("fill", d => colorScale(d.key)).selectAll("rect").data(d => d).join("rect").attr("width", xScale.bandwidth()).attr("y", d => yScale(d[1])).attr("x", d => xScale(d.data.type)).attr("height", d => yScale(d[0]) - yScale(d[1]) || 0);
+  svg.select(".plot-area").selectAll(".separator").data(originalData.filter(d => !d.type)).join("line").attr("class", "separator").attr("x1", d => xScale(d.type) + xScale.bandwidth() / 2).attr("x2", d => xScale(d.type) + xScale.bandwidth() / 2).attr("y1", d => yScale(0)).attr("y2", d => yScale(maxY)).attr("stroke", "gray").attr("stroke-dasharray", 5);
+  const averages = originalData.filter(d => d.type).map(d => d.manufacture + (d?.battery || d?.exhaust) + d.fuel);
+  const electricAverage = averages.slice(2).reduce((a, b) => a + b) / 4;
+  const conventionalAverage = averages.slice(0, 2).reduce((a, b) => a + b) / 2; // Create conventional average line
+
+  svg.select(".plot-area").append("line").attr("x1", xScale(originalData[0].type) - 0.5 * xScale.bandwidth()).attr("x2", xScale(originalData[1].type) + 1.5 * xScale.bandwidth()).attr("y1", yScale(conventionalAverage)).attr("y2", yScale(conventionalAverage)).attr("stroke", "black").attr("stroke-dasharray", 5);
+  svg.select(".plot-area").append("text").attr("x", xScale(originalData[1].type)).attr("y", yScale(conventionalAverage) - 5).text("Avg: " + Math.round(conventionalAverage)); // Create electric average line
+
+  svg.select(".plot-area").append("line").attr("x1", xScale(originalData[3].type) - 0.5 * xScale.bandwidth()).attr("x2", xScale(originalData[originalData.length - 1].type) + 1.5 * xScale.bandwidth()).attr("y1", yScale(electricAverage)).attr("y2", yScale(electricAverage)).attr("stroke", "black").attr("stroke-dasharray", 5);
+  svg.select(".plot-area").append("text").attr("x", xScale(originalData[originalData.length - 1].type)).attr("y", yScale(electricAverage) - 5).text("Avg: " + Math.round(electricAverage)); // Create animation
+
+  if (animate.active) {
+    bars.transition().delay((d, i) => i * animate.delay).duration(animate.duration).attr("y", d => yScale(d[1])).attr("height", d => yScale(d[0]) - yScale(d[1]));
+  } // Legend
+
+
+  const legendWidth = 180;
+  categories.forEach((r, i) => {
+    svg.append("circle").attr("cx", width - legendWidth).attr("cy", 10 + 20 * i).attr("r", 6).style("fill", colorScale(r));
+    svg.append("text").attr("x", width - legendWidth + 10).attr("y", 11 + 20.5 * i).text(categoryLabels[i]).attr("class", "legendMark").attr("alignment-baseline", "middle");
+  });
+});</script>
+		<script>const toDate1 = s => {
+  const matches = s.match(/(\d+)\/(\d+)\/(\d+)/);
+  return new Date(matches[3], matches[2], matches[1]);
+};
+
+Promise.all([d3.csv("datasources/fuel-cleaned.csv", null, data => ({
+  Date: toDate1(data["Date"]),
+  Petrol: toFloat(data["ULSP pump"]),
+  Diesel: toFloat(data["ULSD pump"])
+})), d3.csv("datasources/Euro_6_latest.csv", null, data => ({
+  Fuel: data["Fuel Type"],
+  FuelConsumption: toFloat(data["WLTP Metric Combined"]) / 100 || 0,
+  // litres / km
+  ElectricityConsumption: toFloat(data["wh/km"]) || 0 // wh / km
+
+})), d3.csv("datasources/energy-cleaned.csv", null, data => ({
+  Year: new Date(+data["Year"], 7, 1),
+  UnitCost: toFloat(data["Average variable unit price (£/kWh)"]) * 100 // pence / kWh
+
+}))]).then(files => {
+  const margin = {
+    top: 15,
+    right: 20,
+    bottom: 10,
+    left: 60
+  };
+  const scale = 0.9;
+  const height = 300 / scale;
+  const width = 500 / scale; // Averafe fuel data over a number of days
+
+  const fullFuelData = files[0].filter(d => d.Date >= new Date(2010, 1, 1)); // pence / litre
+
+  const averageFactor = 28; // Number of days to average over
+
+  const fuelData = [...Array(Math.floor(fullFuelData.length / averageFactor)).keys()].map(i => {
+    let sumD = 0;
+    let sumP = 0;
+    const N = Math.min(averageFactor, fullFuelData.length - i * averageFactor);
+
+    for (let n = 0; n < N; n++) {
+      sumD += fullFuelData[i * averageFactor + n].Diesel;
+      sumP += fullFuelData[i * averageFactor + n].Petrol;
+    }
+
+    return {
+      Date: fullFuelData[i * averageFactor + Math.floor((averageFactor + 1) / 2)].Date,
+      Petrol: sumP / N,
+      Diesel: sumD / N
+    };
+  }); // TODO: error shading based on min-max averages
+
+  const fuelConsumptionByVehicleType = files[1].reduce((grouped, v) => {
+    grouped[v.Fuel] = grouped[v.Fuel] ? {
+      sum: grouped[v.Fuel].sum + v.FuelConsumption,
+      count: grouped[v.Fuel].count + 1
+    } : {
+      sum: v.FuelConsumption,
+      count: 1
+    };
+    return grouped;
+  }, {});
+  Object.keys(fuelConsumptionByVehicleType).forEach(k => fuelConsumptionByVehicleType[k] = fuelConsumptionByVehicleType[k].sum / fuelConsumptionByVehicleType[k].count); // litres / km
+
+  const electricityConsumptionByVehicleType = files[1].reduce((grouped, v) => {
+    grouped[v.Fuel] = grouped[v.Fuel] ? {
+      sum: grouped[v.Fuel].sum + v.ElectricityConsumption,
+      count: grouped[v.Fuel].count + 1
+    } : {
+      sum: v.ElectricityConsumption,
+      count: 1
+    };
+    return grouped;
+  }, {});
+  Object.keys(electricityConsumptionByVehicleType).forEach(k => electricityConsumptionByVehicleType[k] = electricityConsumptionByVehicleType[k].sum / electricityConsumptionByVehicleType[k].count / 1000); // kWh/km
+
+  const averageElectricityConsumption = electricityConsumptionByVehicleType.Electricity; // kWh / km;
+
+  const averagePetrolConsumption = fuelConsumptionByVehicleType.Petrol; // litres / km
+
+  const averageDieselConsumption = fuelConsumptionByVehicleType.Diesel; // litres / km
+
+  const [xmin, xmax] = d3.extent(fuelData, d => d.Date);
+  xmax.setDate(xmax.getDate() - 13);
+  const legendWidth = 50;
+  var xScale = d3.scaleTime().domain([xmin, xmax]).range([margin.left, width - margin.right - legendWidth]);
+  const maxY = d3.max(fuelData, data => Math.max(data.Diesel * averageDieselConsumption, data.Petrol * averagePetrolConsumption)) + 1;
+  const yScale = d3.scaleLinear().domain([0, maxY]).rangeRound([height - margin.bottom, margin.top]);
+  const svg = d3.select("#chart2").append("svg").attr("viewBox", `0 0 ${width} ${height}`) // Makes svg scale responsively
+  .attr("width", "100%").attr("height", "100%");
+  svg.append("g").attr("class", "plot-area").attr("width", width);
+  svg.append("g").attr("class", "x-axis");
+  svg.append("g").attr("class", "y-axis"); // Create x-axis
+
+  svg.select(".x-axis").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(xScale).tickSizeOuter(0)).call(g => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "center")); // Create y-axis
+
+  svg.select(".y-axis").attr("transform", `translate(${margin.left}, 0)`).call(d3.axisLeft(yScale).tickSizeOuter(0)).call(g => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "end")).call(g => g.append("text").attr("x", 0).attr("y", -50).attr("class", "axisTick").attr("fill", "currentColor").attr("text-anchor", "center").text("Vehicle running cost (pence / km)").attr("transform", "rotate(-90)")); // Petrol Line
+
+  svg.select(".plot-area").append("path").datum(fuelData).attr("fill", "none").attr("stroke", colours[0]).attr("stroke-width", 1.5).attr("d", d3.line().x(d => xScale(d.Date)).y(d => yScale(d.Petrol * averagePetrolConsumption))); // Diesel Line
+
+  svg.select(".plot-area").append("path").datum(fuelData).attr("fill", "none").attr("stroke", colours[1]).attr("stroke-width", 1.5).attr("d", d3.line().x(d => xScale(d.Date)).y(d => yScale(d.Diesel * averageDieselConsumption))); // Electric Line
+
+  svg.select(".plot-area").append("path").datum(files[2]).attr("fill", "none").attr("stroke", colours[2]).attr("stroke-width", 1.5).attr("d", d3.line().x(d => xScale(d.Year)).y(d => yScale(d.UnitCost * averageElectricityConsumption)));
+  const categories = ["Petrol", "Diesel", "Electric"]; // Legend
+  // categories.forEach((r, i) => {
+
+  svg.append("circle").attr("cx", xScale(fuelData[fuelData.length - 1].Date) + 10).attr("cy", yScale(fuelData[fuelData.length - 1].Petrol * averagePetrolConsumption)).attr("r", 6).style("fill", colours[0]);
+  svg.append("text").attr("x", xScale(fuelData[fuelData.length - 1].Date) + 20).attr("y", 1 + yScale(fuelData[fuelData.length - 1].Petrol * averagePetrolConsumption)).text("Petrol").attr("class", "legendMark").attr("alignment-baseline", "middle");
+  svg.append("circle").attr("cx", xScale(fuelData[fuelData.length - 1].Date) + 10).attr("cy", yScale(fuelData[fuelData.length - 1].Diesel * averageDieselConsumption)).attr("r", 6).style("fill", colours[1]);
+  svg.append("text").attr("x", xScale(fuelData[fuelData.length - 1].Date) + 20).attr("y", 1 + yScale(fuelData[fuelData.length - 1].Diesel * averageDieselConsumption)).text("Diesel").attr("class", "legendMark").attr("alignment-baseline", "middle");
+  const elecData = files[2];
+  svg.append("circle").attr("cx", xScale(elecData[0].Year) + 10).attr("cy", yScale(elecData[0].UnitCost * averageElectricityConsumption)).attr("r", 6).style("fill", colours[2]);
+  svg.append("text").attr("x", xScale(elecData[0].Year) + 20).attr("y", 1 + yScale(elecData[0].UnitCost * averageElectricityConsumption)).text("Electric").attr("class", "legendMark").attr("alignment-baseline", "middle"); // });
+  // ===================================================================================================================
+  //													Chart 2B
+  // ===================================================================================================================
+  // https://ev-database.uk/cheatsheet/price-electric-car
+
+  const averageElectricVehicleCost = 48561; // £
+  // Cost of Vauxhall Corsa (top selling car 2021)
+  // TODO: source for best selling
+  // https://www.vauxhall.co.uk/
+
+  const averagePetrolVehicleCost = 17015; // £
+  // Cost of BMW 318d M Sport Saloon
+  // TODO: Not sure if this is the best selling
+  // https://configure.bmw.co.uk/
+
+  const averageDiselVehicleCost = 38905; // £
+  // TODO: better source (?)
+  // https://www.rac.co.uk/drive/electric-cars/charging/how-long-do-electric-car-batteries-last/
+  // also "the batteries in all electric cars sold in the U.S. are covered under warranty for at least 8 years or 100,000 miles"
+  // Consumer Reports estimates the average EV battery pack’s lifespan to be at around 200,000 miles
+  // https://www.myev.com/research/ev-101/how-long-should-an-electric-cars-battery-last
+
+  const averageElectricLifespan = 100000 * 1.60934; // km
+  // TODO: source
+  // Most modern cars have a design life of at least 150,000 miles
+  // https://www.autoexpress.co.uk/car-news/99536/high-mileage-cars-should-you-buy-one
+
+  const averagePetrolLifespan = averageElectricLifespan;
+  const averageDieselLifespan = averageElectricLifespan;
+  const adjustedFuelData = fuelData.map(dp => ({
+    Date: dp.Date,
+    Diesel: dp.Diesel + averageDiselVehicleCost * 100 / averageDieselLifespan,
+    Petrol: dp.Petrol + averagePetrolVehicleCost * 100 / averagePetrolLifespan
+  }));
+  const electricFuelData = files[2].map(dp => ({
+    Year: dp.Year,
+    UnitCost: dp.UnitCost + averageElectricVehicleCost * 100 / averageElectricLifespan
+  }));
+  const svgB = d3.select("#chart2B").append("svg").attr("viewBox", `0 0 ${width} ${height}`) // Makes svg scale responsively
+  .attr("width", "100%").attr("height", "100%");
+  svgB.append("g").attr("class", "plot-area").attr("width", width);
+  svgB.append("g").attr("class", "x-axis");
+  svgB.append("g").attr("class", "y-axis"); // Create x-axis
+
+  svgB.select(".x-axis").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(xScale).tickSizeOuter(0)).call(g => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "center")); // Create y-axis
+
+  svgB.select(".y-axis").attr("transform", `translate(${margin.left}, 0)`).call(d3.axisLeft(yScale).tickSizeOuter(0)).call(g => g.selectAll(".tick text").attr("class", "axisTick").style("text-anchor", "end")).call(g => g.append("text").attr("x", 0).attr("y", -50).attr("class", "axisTick").attr("fill", "currentColor").attr("text-anchor", "center").text("Vehicle purchase and running cost (pence / km)").attr("transform", "rotate(-90)")); // Petrol Line
+
+  svgB.select(".plot-area").append("path").datum(adjustedFuelData).attr("fill", "none").attr("stroke", colours[0]).attr("stroke-width", 1.5).attr("d", d3.line().x(d => xScale(d.Date)).y(d => yScale(d.Petrol * averagePetrolConsumption))); // Diesel Line
+
+  svgB.select(".plot-area").append("path").datum(adjustedFuelData).attr("fill", "none").attr("stroke", colours[1]).attr("stroke-width", 1.5).attr("d", d3.line().x(d => xScale(d.Date)).y(d => yScale(d.Diesel * averageDieselConsumption))); // Electric Line
+
+  svgB.select(".plot-area").append("path").datum(electricFuelData).attr("fill", "none").attr("stroke", colours[2]).attr("stroke-width", 1.5).attr("d", d3.line().x(d => xScale(d.Year)).y(d => yScale(d.UnitCost * averageElectricityConsumption)));
+  svgB.append("circle").attr("cx", xScale(adjustedFuelData[adjustedFuelData.length - 1].Date) + 10).attr("cy", yScale(adjustedFuelData[adjustedFuelData.length - 1].Petrol * averagePetrolConsumption) - 3).attr("r", 6).style("fill", colours[0]);
+  svgB.append("text").attr("x", xScale(adjustedFuelData[adjustedFuelData.length - 1].Date) + 20).attr("y", 1 + yScale(adjustedFuelData[adjustedFuelData.length - 1].Petrol * averagePetrolConsumption) - 3).text("Petrol").attr("class", "legendMark").attr("alignment-baseline", "middle");
+  svgB.append("circle").attr("cx", xScale(adjustedFuelData[adjustedFuelData.length - 1].Date) + 10).attr("cy", yScale(adjustedFuelData[adjustedFuelData.length - 1].Diesel * averageDieselConsumption) + 2).attr("r", 6).style("fill", colours[1]);
+  svgB.append("text").attr("x", xScale(adjustedFuelData[adjustedFuelData.length - 1].Date) + 20).attr("y", 1 + yScale(adjustedFuelData[adjustedFuelData.length - 1].Diesel * averageDieselConsumption) + 2).text("Diesel").attr("class", "legendMark").attr("alignment-baseline", "middle");
+  svgB.append("circle").attr("cx", xScale(electricFuelData[0].Year) + 10).attr("cy", yScale(electricFuelData[0].UnitCost * averageElectricityConsumption)).attr("r", 6).style("fill", colours[2]);
+  svgB.append("text").attr("x", xScale(electricFuelData[0].Year) + 20).attr("y", 1 + yScale(electricFuelData[0].UnitCost * averageElectricityConsumption)).text("Electric").attr("class", "legendMark").attr("alignment-baseline", "middle");
+});</script>
+		<script>const pointFill = "#777";
+let selectedCity = null;
+Promise.all([// https://bost.ocks.org/mike/map/uk.json
+d3.json("datasources/uk.json"), d3.csv("datasources/worldcities.csv", null, data => ({
+  name: data.city,
+  lat: data.lat,
+  lng: data.lng,
+  population: data.population,
+  country: data.iso3
+})), d3.json("datasources/chargepoints.json")]).then(files => {
+  const uk = files[0];
+  const countries = topojson.feature(uk, uk.objects.subunits);
+  const cities = topojson.feature(uk, uk.objects.places);
+  const excludedRegions = ["NIR", "IRL"];
+
+  function latLongToCoordinates(lat, lng) {
+    lng = (lng - uk.transform.translate[0]) / uk.transform.scale[0];
+    lat = (lat - uk.transform.translate[1]) / uk.transform.scale[1];
+    return [lng, lat];
+  }
+
+  function latLongDistance(lat1, lon1, lat2, lon2) {
+    // Haversine distance
+    const R = 6371e3; // Earths radius in m
+
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const delPhi = (lat2 - lat1) * Math.PI / 180;
+    const delLam = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(delPhi / 2) * Math.sin(delPhi / 2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(delLam / 2) * Math.sin(delLam / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c / 1000; // km
+  }
+
+  function isInsideRadius(d, selectedCity) {
+    return latLongDistance(d.geometry.coordinates[1], d.geometry.coordinates[0], selectedCity.geometry.coordinates[1], selectedCity.geometry.coordinates[0]) < averageRange;
+  }
+
+  const excludedCounties = ["Isle of Man", "NA", "County Antrim", "County Armagh", "County Tyrone", "County Down", "County Londonderry", "County Fermanagh", "Newtownabbey", "Down", "Galway County", "Wexford", "Dublin", "Belfast Greater"];
+  const chargepoints = files[2].ChargeDevice.filter(c => c.ChargeDeviceStatus === "In service" && !excludedCounties.includes(c.ChargeDeviceLocation.Address.County));
+  const excludedCities = ["Belfast", "Islington", "Tottenham", "Ilford", "Enfield", "Birstall", "Sale", "Wythenshawe", "Romford"];
+  const numCities = 50;
+  const numLabels = 12;
+  const pointSize = 3;
+  const ukCities = files[1].filter(c => c.country === "GBR" && !excludedCities.includes(c.name)).sort((a, b) => b.population - a.population).slice(0, numCities).map(c => ({ ...c,
+    coordinate: [c.lng, c.lat],
+    scaledCoordinate: latLongToCoordinates(c.lat, c.lng)
+  })); // https://ev-database.uk/cheatsheet/range-electric-car
+
+  const averageRange = 203 * 1.60934; // km
+  // const averageRangeLat = averageRange / 110.574; // deg
+  //     Latitude: 1 deg = 110.574 km
+  // Longitude: 1 deg = 111.320*cos(latitude) km
+
+  const width = 960;
+  const height = 1160;
+  const yOffset = 230;
+  const projection = d3.geoAlbers().center([1, 55.4]).rotate([4.4, 0]).parallels([50, 60]).scale(1200 * 5).translate([width / 2, height / 2 - yOffset]);
+  const pathFunction = d3.geoPath().projection(projection).pointRadius(pointSize);
+  const svg = d3.select("#chart3").append("svg").attr("viewBox", `0 0 ${width} ${height - yOffset}`) // Makes svg scale responsively
+  .attr("width", "100%").attr("height", "100%");
+  const background = svg.append("g").attr("class", "background"); // Country outlines
+
+  background.selectAll(".subunit").data(countries.features.filter(d => !excludedRegions.includes(d.id))).enter().append("path").attr("class", d => `subunit ${d.id}`).attr("d", pathFunction); // Boundaries between countries
+
+  background.append("path").datum(topojson.mesh(uk, uk.objects.subunits, (a, b) => a !== b && !excludedRegions.includes(a.id))).attr("class", "subunit-boundary").attr("d", pathFunction); // chargepoints in GeoJson features format
+
+  const geoChargePoints = chargepoints.map(c => ({
+    geometry: {
+      coordinates: [c.ChargeDeviceLocation.Longitude, c.ChargeDeviceLocation.Latitude],
+      type: "Point"
+    },
+    properties: {
+      name: c.ChargeDeviceName,
+      county: c.ChargeDeviceLocation.Address.County
+    },
+    type: "Feature"
+  })); // Charge points
+
+  const chargeMarkers = svg.selectAll("chargepoint").data(geoChargePoints).enter().append("circle").attr("class", "chargepoint").attr("transform", d => "translate(" + projection(d.geometry.coordinates) + ")").attr("cx", 0).attr("cy", 0).attr("r", 1).attr("fill", "transparent"); // ukCities in GeoJson features format
+
+  const geoUkCities = ukCities.map(c => ({
+    geometry: {
+      coordinates: c.coordinate,
+      type: "Point"
+    },
+    properties: {
+      name: c.name
+    },
+    type: "Feature"
+  })); // City markers
+
+  const placePoints = svg.selectAll("place").data(geoUkCities).enter().append("circle").attr("class", "place").attr("transform", d => "translate(" + projection(d.geometry.coordinates) + ")").attr("cx", 0).attr("cy", 0).attr("r", pointSize).attr("fill", pointFill).on("mouseover", handleMouseOver).on("mouseout", handleMouseOut).on("click", handleMouseClick);
+  svg.selectAll(".place-label").data(geoUkCities.slice(0, numLabels)).enter().append("text").attr("class", "place-label").attr("transform", d => "translate(" + projection(d.geometry.coordinates) + ")").attr("x", d => d.geometry.coordinates[0] > -1 ? 6 : -6).attr("dy", ".35em").style("text-anchor", d => d.geometry.coordinates[0] > -1 ? "start" : "end").text(d => d.properties.name);
+
+  function addTextLabel(d, bold = false) {
+    if (bold) {
+      const width = `${0.55 * d.properties.name.length}rem`;
+      const negativeWidth = `${-0.6 * d.properties.name.length}rem`;
+      svg.append("rect").attr("id", d.properties.name.replaceAll(" ", "_")).attr("transform", "translate(" + projection(d.geometry.coordinates) + ")").attr("height", "1em").attr("width", width).attr("x", d.geometry.coordinates[0] > -1 ? 5 : negativeWidth).attr("y", "-.5em").attr("rx", "4px").attr("fill", "#ffffff").text(d.properties.name);
+    }
+
+    svg.append("text").attr("id", d.properties.name.replaceAll(" ", "_")).attr("class", "place-label").attr("transform", "translate(" + projection(d.geometry.coordinates) + ")").attr("x", d.geometry.coordinates[0] > -1 ? 6 : -6).attr("dy", ".35em").attr(bold ? "font-weight" : undefined, 700).style("text-anchor", d.geometry.coordinates[0] > -1 ? "start" : "end").text(d.properties.name);
+  }
+
+  function handleMouseOver(event, d) {
+    d3.select(this).attr("fill", colours[0]).attr("r", pointSize * 1.8);
+
+    if (!selectedCity || selectedCity.properties.name !== d.properties.name) {
+      addTextLabel(d);
+    }
+  }
+
+  function handleMouseOut(event, d) {
+    if (!selectedCity || selectedCity.properties.name !== d.properties.name) {
+      d3.select(this).attr("r", pointSize);
+      d3.select(`#${d.properties.name.replaceAll(" ", "_")}`)?.remove();
+    }
+
+    d3.select(this).attr("fill", selectedCity?.properties.name === d.properties.name ? colours[1] : selectedCity && isInsideRadius(d, selectedCity) ? "#111" : pointFill);
+  }
+
+  function handleMouseClick(event, d) {
+    d3.selectAll(`#${selectedCity?.properties?.name?.replaceAll(" ", "_")}`).remove();
+    d3.selectAll(".radius").remove();
+
+    if (!selectedCity || selectedCity.properties.name !== d.properties.name) {
+      selectedCity = d;
+      const averageRangeLongitude = averageRange / (111.32 * Math.cos(parseFloat(d.geometry.coordinates[0] * Math.PI / 180)));
+      circlePoints = d3.geoCircle().center(d.geometry.coordinates).radius(averageRangeLongitude);
+      background.append("path").datum(circlePoints).attr("class", "radius").attr("d", pathFunction);
+      addTextLabel(d, true);
+    } else {
+      selectedCity = null;
+    } // Updates colours and size of all place markers
+
+
+    placePoints.attr("r", d => (selectedCity?.properties.name === d.properties.name ? 2 : 1) * pointSize).attr("fill", d => selectedCity?.properties.name === d.properties.name ? colours[1] : selectedCity && isInsideRadius(d, selectedCity) ? "#111" : pointFill);
+    chargeMarkers.attr("fill", d => selectedCity && isInsideRadius(d, selectedCity) ? "#a8c7a8" : "transparent");
+  }
+
+  const categories = [{
+    name: "Cities",
+    colour: pointFill,
+    area: false
+  }, {
+    name: "Selected City",
+    colour: colours[1],
+    area: false
+  }, {
+    name: "Cities reachable on 1 charge",
+    colour: "#111",
+    area: false
+  }, {
+    name: "Chargepoints",
+    colour: "#a8c7a8",
+    area: false
+  }, {
+    name: `Range on 1 charge (${Math.round(averageRange)}km)`,
+    colour: colours[0],
+    area: true
+  }]; // Legend
+
+  const legendWidth = 280;
+  const legendYOffset = 200;
+  categories.forEach((r, i) => {
+    svg.append("circle").attr("cx", width - legendWidth).attr("cy", legendYOffset + 20 * i).attr("r", 6).style("stroke", r.area ? r.colour : null).style("fill", r.colour + (r.area ? "33" : ""));
+    svg.append("text").attr("x", width - legendWidth + 10).attr("y", legendYOffset + 1 + 20.5 * i).text(r.name).attr("class", "legendMark").attr("alignment-baseline", "middle");
+  });
+});</script>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Are Electric Vehicles Viable in 2021?</h1>
+
+			<h2>From 2035, the EU have proposed an effective ban on new fossil-fuel cars.</h2>
+			<p>
+				The EU have proposed a 55% cut in CO<sub>2</sub> emissions by 2030 and a 100% cut by 2035
+				<sup><a class="ref">euproposal</a></sup
+				>. This means that new fossil-fuel (and hybrid) cars would be unable to be sold within the EU, effectively limiting the
+				market to only sell electric vehicles (EVs). But are these cars actually practical and viable to own and run?
+			</p>
+
+			<h2>1. Are electric vehicles actually better for the environment?</h2>
+			<p>
+				Electric cars still produce CO<sub>2</sub> emissions: they have manufacture and transport requirements, and that's even
+				before the emissions produced by generating the electricity they need to run. With all of that taken into consideration, are
+				they even better for the environment? Does it depend on the energy production methods being used?
+			</p>
+			<div class="chartContainer">
+				<div id="chart1" class="barchart"></div>
+				<div class="sources">Sources: <a class="ref">eurostat</a>, <a class="ref">ipcc</a></div>
+			</div>
+			<p>
+				This chart shows that, on average, electric cars are produce less than 50% of the emissions of conventional vehicles,
+				considering the vehicle and battery manufacture emissions, upstream emissions (fuel and electricity production) and the
+				vehicle exhaust emissions.
+			</p>
+			<p>
+				Poland and Iceland have been chosen as two extremes of carbon-based energy production, with Poland using 11.4% renewable
+				energy and producing 507 grams of CO<sub>2</sub>-equivalent per kilowatt-hour of electricity generated
+				(gCO<sub>2</sub>/kWh), and Iceland using 99.99% renewable energy and producing 28 gCO<sub>2</sub>/kWh. As can be seen, even
+				with a high-carbon energy grid like Poland's, the emissions produced are still significantly lower than a conventional
+				vehicle.
+			</p>
+
+			<h2>2. Are electric vehicles more expensive to run than conventional vehicles?</h2>
+			<div class="chartContainer">
+				<div id="chart2" class="linechart"></div>
+				<div class="sources">Sources:</div>
+			</div>
+			<p>
+				Surprisingly, electric vehicles are much cheaper to run per km than conventional vehicles (around 30% of the cost). And
+				whilst this has risen slightly over the last 10 years due to rising enery prices, it still has a long way to go before it
+				catches up with the carbon-based fuels.
+			</p>
+
+			<h3>What about their much higher cost-to-buy?</h3>
+			<p>On average, electric cars cost ...</p>
+			<div class="chartContainer">
+				<div id="chart2B" class="linechart"></div>
+				<div class="sources">Sources:</div>
+			</div>
+			<p>
+				With this cost factored in across the average lifetime of each vehicle type (TODO: each lifespan), the electric vehicles
+				still come out cheaper. And although they are catching up towards 2021 and the future, the price of electric vehicles is
+				expected to drop
+				<!-- TODO: Source -->
+				in the future as they become more mainstream and their manufacture efficiency and distribution is improved.
+			</p>
+
+			<h2>3. How far can electric vehicles batteries travel on a charge?</h2>
+			<p>
+				Current EV batteries can travel an average of 327km on a single charge(TODO: ref). That's the distance from Southampton to
+				Leeds!
+			</p>
+			<!-- TODO: Values -->
+			<p>
+				Why not find out how far you can travel from your home town? You might be surprised!
+				<br />
+				<em>Select a city on the map to start:</em>
+			</p>
+			<div class="chartContainer">
+				<div id="chart3" class="mapchart"></div>
+				<div class="sources">Sources:</div>
+			</div>
+
+			<h2>Conclusion</h2>
+			<p>
+				Electric vehicles are more viable than ever before. They are much better for the environment than conventional vehicles, and
+				cheaper to run, even when you factor in the higher inital cost. Production costs and battery capacities are predicted to
+				improve in the near future, and you can already travel 1/3 of the length of the UK on a single battery charge, with more
+				than 17,000 locations with chargepoints for those longer journeys.
+			</p>
+
+			<h4>Sources:</h4>
+			<div id="sourcesList"></div>
+		</div>
+		<script>const sources = [{
+  id: "euproposal",
+  reference: "'Proposal for a Regulation of the European Parliament and of the Council Amending Regulation (EU) 2019/631'. COM / 2021/556 final (2021).",
+  url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=celex:52021PC0556"
+}, {
+  id: "eurostat",
+  reference: "Eurostat, 'Gross and Net Production of Electricity and Derived Heat by Type of Plant and Operator', 2021.",
+  url: "https://ec.europa.eu/eurostat/databrowser/view/NRG_IND_PEH__custom_1633739/default/table?lang=en"
+}, {
+  id: "ipcc",
+  reference: "Schl&ouml;mer S. et al., 'Annex III: Technology-specific Cost and Performance Parameters'. In: Climate Change 2014: Mitigation of Climate Change., IPCC. 2014.",
+  url: "https://www.ipcc.ch/site/assets/uploads/2018/02/ipcc_wg3_ar5_annex-iii.pdf#page=7"
+}];
+sources.forEach((s, i) => document.getElementById("sourcesList").innerHTML += `<div id="${i + 1}" class="source">[${i + 1}]: ${s.reference} Available at: <a href="${s.url}">${s.url}</a></div>`);
+Array.from(document.getElementsByClassName("ref")).forEach(ref => {
+  const i = sources.findIndex(s => s.id === ref.innerHTML) + 1;
+  ref.innerHTML = `[${i}]`;
+  ref.href = `#${i}`;
+});</script>
+	</body>
+</html>
