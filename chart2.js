@@ -209,14 +209,17 @@ Promise.all([
 
 	// https://ev-database.uk/cheatsheet/price-electric-car
 	const averageElectricVehicleCost = 48561; // £
+
 	// Cost of Vauxhall Corsa (top selling car 2021)
 	// TODO: source for best selling
 	// https://www.vauxhall.co.uk/
 	const averagePetrolVehicleCost = 17015; // £
-	// Cost of BMW 318d M Sport Saloon
+
+	// Cost of VW Golf
 	// TODO: Not sure if this is the best selling
-	// https://configure.bmw.co.uk/
-	const averageDiselVehicleCost = 38905; // £
+	// https://www.carshop.co.uk/latest-news/most-popular-diesel-cars/
+	// https://www.volkswagen.co.uk/files/live/sites/vwuk/files/pdf/Brochures/golf-8-brochure-pricelist-p11d.pdf
+	const averageDiselVehicleCost = 26770; // £
 
 	// TODO: better source (?)
 	// https://www.rac.co.uk/drive/electric-cars/charging/how-long-do-electric-car-batteries-last/

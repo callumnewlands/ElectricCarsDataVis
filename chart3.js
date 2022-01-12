@@ -22,12 +22,6 @@ Promise.all([
 	const cities = topojson.feature(uk, uk.objects.places);
 	const excludedRegions = ["NIR", "IRL"];
 
-	function latLongToCoordinates(lat, lng) {
-		lng = (lng - uk.transform.translate[0]) / uk.transform.scale[0];
-		lat = (lat - uk.transform.translate[1]) / uk.transform.scale[1];
-		return [lng, lat];
-	}
-
 	function latLongDistance(lat1, lon1, lat2, lon2) {
 		// Haversine distance
 
@@ -84,7 +78,7 @@ Promise.all([
 		.filter((c) => c.country === "GBR" && !excludedCities.includes(c.name))
 		.sort((a, b) => b.population - a.population)
 		.slice(0, numCities)
-		.map((c) => ({...c, coordinate: [c.lng, c.lat], scaledCoordinate: latLongToCoordinates(c.lat, c.lng)}));
+		.map((c) => ({...c, coordinate: [c.lng, c.lat]}));
 
 	// https://ev-database.uk/cheatsheet/range-electric-car
 	const averageRange = 203 * 1.60934; // km
@@ -273,14 +267,14 @@ Promise.all([
     const legendYOffset = 200;
 	categories.forEach((r, i) => {
 		svg.append("circle")
-			.attr("cx", width - legendWidth)
-			.attr("cy", legendYOffset + 20 * i)
-			.attr("r", 6)
+			.attr("cx", width - legendWidth - (r.area ? 20 : 0) )
+			.attr("cy", legendYOffset + (r.area ? 20 : 0) + 20 * i)
+			.attr("r", r.area ? 24 : 6)
             .style("stroke", r.area ? r.colour : null)
 			.style("fill", r.colour + (r.area ? "33" : ""));
 		svg.append("text")
 			.attr("x", width - legendWidth + 10)
-			.attr("y", legendYOffset + 1 + 20.5 * i)
+			.attr("y", legendYOffset + (r.area ? 17 : 0) + 1 + 20.5 * i)
 			.text(r.name)
 			.attr("class", "legendMark")
 			.attr("alignment-baseline", "middle");

@@ -107,10 +107,11 @@ Promise.all([
 
 	// Vehicle Production Emissions (gCo2e/km)
 	const electricVehicleProductionEmissionsPerKm = 38;
-	// % Vehicle production emissions: 3.9-5.7 4.8 (median) \todo{?} (tonne CO\textsubscript{2}e/kg) 38 (g CO\textsubscript{2}e/km) \todo{Does this apply to conventional vehicles too?}
+	// % Vehicle production emissions: 3.9-5.7 4.8 (median) (tonne CO\textsubscript{2}e/kg) 38 (g CO\textsubscript{2}e/km) 
 	// % https://www.researchgate.net/publication/301937291_The_size_and_range_effect_Lifecycle_greenhouse_gas_emissions_of_electric_vehicles
 	// % https://www.carbonbrief.org/factcheck-how-electric-vehicles-help-to-tackle-climate-change
 	// %  ^ TODO: Secondary Source -- not sure where the 38 came from
+
 	const conventionalVehicleProductionEmissionsPerKm = 46;
 	// %  ^ TODO: Secondary Source -- not sure where the 46 came from
 
