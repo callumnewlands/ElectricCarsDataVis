@@ -211,24 +211,20 @@ Promise.all([
 	const averageElectricVehicleCost = 48561; // £
 
 	// Cost of Vauxhall Corsa (top selling car 2021)
-	// TODO: source for best selling
 	// https://www.vauxhall.co.uk/
 	const averagePetrolVehicleCost = 17015; // £
 
 	// Cost of VW Golf
-	// TODO: Not sure if this is the best selling
 	// https://www.carshop.co.uk/latest-news/most-popular-diesel-cars/
 	// https://www.volkswagen.co.uk/files/live/sites/vwuk/files/pdf/Brochures/golf-8-brochure-pricelist-p11d.pdf
 	const averageDiselVehicleCost = 26770; // £
 
-	// TODO: better source (?)
 	// https://www.rac.co.uk/drive/electric-cars/charging/how-long-do-electric-car-batteries-last/
 	// also "the batteries in all electric cars sold in the U.S. are covered under warranty for at least 8 years or 100,000 miles"
 	// Consumer Reports estimates the average EV battery pack’s lifespan to be at around 200,000 miles
 	// https://www.myev.com/research/ev-101/how-long-should-an-electric-cars-battery-last
 	const averageElectricLifespan = 100000 * 1.60934; // km
 
-	// TODO: source
 	// Most modern cars have a design life of at least 150,000 miles
 	// https://www.autoexpress.co.uk/car-news/99536/high-mileage-cars-should-you-buy-one
 	const averagePetrolLifespan = averageElectricLifespan;

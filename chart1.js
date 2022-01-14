@@ -5,6 +5,8 @@ const colours = ["#003f5c", "#bc5090", "#ffa600", "#58508d", "#ff6361"];
 const toBase64 = (data) => btoa(unescape(encodeURIComponent(JSON.stringify(data))));
 const fromBase64 = (str) => JSON.parse(atob(str));
 
+console.log(fromBase64(eurostat))
+
 Promise.all([
 	fromBase64(eurostat).map((data) => ({
 		Country: data["SIEC (Labels)"],
@@ -110,15 +112,13 @@ Promise.all([
 	// % Vehicle production emissions: 3.9-5.7 4.8 (median) (tonne CO\textsubscript{2}e/kg) 38 (g CO\textsubscript{2}e/km) 
 	// % https://www.researchgate.net/publication/301937291_The_size_and_range_effect_Lifecycle_greenhouse_gas_emissions_of_electric_vehicles
 	// % https://www.carbonbrief.org/factcheck-how-electric-vehicles-help-to-tackle-climate-change
-	// %  ^ TODO: Secondary Source -- not sure where the 38 came from
-
+	
 	const conventionalVehicleProductionEmissionsPerKm = 46;
-	// %  ^ TODO: Secondary Source -- not sure where the 46 came from
-
-	// TODO: Average electric vehicle battery guarantee (km)
+	
+	// Average electric vehicle battery guarantee (km)
 	const averageElectricVehicleBatteryLifespan = 125000 * 1.60934;
 
-	// TODO: Average electric vehicle battery capacity (kWh)
+	// Average electric vehicle battery capacity (kWh)
 	const averageElectricVehicleBatteryCapactity = 83.2;
 	// https://insideevs.com/reviews/344001/compare-evs/
 	// ^ US cars -- is there a better one?
