@@ -5,8 +5,6 @@ const colours = ["#003f5c", "#bc5090", "#ffa600", "#58508d", "#ff6361"];
 const toBase64 = (data) => btoa(unescape(encodeURIComponent(JSON.stringify(data))));
 const fromBase64 = (str) => JSON.parse(atob(str));
 
-console.log(fromBase64(eurostat))
-
 Promise.all([
 	fromBase64(eurostat).map((data) => ({
 		Country: data["SIEC (Labels)"],
@@ -240,7 +238,16 @@ Promise.all([
 		.data(data)
 		.join("g")
 		.classed("series", true)
+		.classed("hidden", false)
+		.attr("id", d => "b" + d.key)
 		.style("fill", (d) => colorScale(d.key))
+		.on("mouseover", (e,d) => {
+			d3.selectAll("g.series").classed("hidden", true)
+			d3.selectAll("#" + "b" + d.key).classed("hidden", false)
+		})
+		.on("mouseout", (e,d) => {
+			d3.selectAll("g.series").classed("hidden", false)
+		})
 		.selectAll("rect")
 		.data((d) => d)
 		.join("rect")
