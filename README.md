@@ -1,7 +1,9 @@
 # Electric Vehicles Data Visualisation
 Completed for my [Part 4 Data Visualisation](https://www.southampton.ac.uk/courses/modules/comp6234) course at the University of Southampton
 
-The completed visualisation is available at: [https://callumnewlands.github.io/comp6234-coursework/](https://callumnewlands.github.io/comp6234-coursework/)
+## Production Environment
+
+The completed visualisation is available at: [https://callumnewlands.github.io/ElectricCarsDataVis/](https://callumnewlands.github.io/ElectricCarsDataVis/)
 
 The report on my visualisations can be found in ```Report.pdf```
 
