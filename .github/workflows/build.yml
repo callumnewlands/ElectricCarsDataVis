@@ -13,5 +13,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Run a one-line script
-        run: ./build.sh
+
+      - name: Run build script
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
