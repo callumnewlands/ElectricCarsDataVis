@@ -14,8 +14,10 @@ My report on the data story can be found in [Report.pdf](https://github.com/call
 
 ## Prerequisistes
 
-There are no pre-requististes for running the site, however the site should be ran using a web server (e.g. [VSCode Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)) 
+The site should be run using a web server (e.g. [VSCode Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)) 
 to facilitate the loading of data from datasources
+
+[npm](https://www.npmjs.com/) is required to run the babel transpiler in the ```build.sh``` script if the site needs backwards compatibility with browsers
 
 ## Data Sources
 
