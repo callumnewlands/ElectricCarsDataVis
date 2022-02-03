@@ -1,11 +1,14 @@
 # Electric Vehicles Data Visualisation
+A data story containing four charts and answering the question "Are Electric Vehicles Viable in 2021?"
+
 Completed for my [Part 4 Data Visualisation](https://www.southampton.ac.uk/courses/modules/comp6234) course at the University of Southampton
 
 ## Production Environment
 
-The completed visualisation is available at: [https://callumnewlands.github.io/ElectricCarsDataVis/](https://callumnewlands.github.io/ElectricCarsDataVis/)
+The full, interactive data story is available at: [https://callumnewlands.github.io/ElectricCarsDataVis/](https://callumnewlands.github.io/ElectricCarsDataVis/) and static
+screenshots of some of the charts can be seen below
 
-The report on my visualisations can be found in ```Report.pdf```
+My report on the data story can be found in [Report.pdf](https://github.com/callumnewlands/ElectricCarsDataVis/blob/main/Report.pdf)
 
 ![Screenshots of some of the charts in my data story](https://github.com/callumnewlands/ElectricCarsDataVis/blob/main/Figures/screenshots.png)
 
