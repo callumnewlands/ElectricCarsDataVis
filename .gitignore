@@ -131,3 +131,4 @@ dist
 
 # Compiled js files
 *compiled.js
+out/
