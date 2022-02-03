@@ -9,7 +9,7 @@ npx babel loadSources.js --out-file out/loadSources-compiled.js
 
 cp index.html out/index.html
 cp style.css out/style.css
-cp -R /datasources /out/datasources
+cp -R datasources out/datasources
 
 code=chart1-compiled.js
 awk -i inplace -v REP="src=\"$code\"" '{
