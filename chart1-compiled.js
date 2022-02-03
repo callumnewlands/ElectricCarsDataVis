@@ -3,7 +3,7 @@ const toFloat = s => parseFloat(s.replaceAll(",", ""));
 const average = (...vs) => vs.reduce((a, b) => a + b) / vs.length || 0;
 
 const colours = ["#003f5c", "#bc5090", "#ffa600", "#58508d", "#ff6361"];
-Promise.all([d3.csv("../datasources/eurostat-2019-cleaned.csv", null, data => ({
+Promise.all([d3.csv("datasources/eurostat-2019-cleaned.csv", null, data => ({
   Country: data["SIEC (Labels)"],
   Total: toFloat(data["Total"]),
   // Gross electricity production (kWh)
@@ -15,7 +15,7 @@ Promise.all([d3.csv("../datasources/eurostat-2019-cleaned.csv", null, data => ({
   Solar: toFloat(data["Solar"]),
   Ocean: toFloat(data["Tide, wave, ocean"]),
   Nuclear: toFloat(data["Nuclear fuels and other fuels n.e.c."]) + toFloat(data["Other fuels n.e.c. - heat from chemical sources"]) + toFloat(data["Other fuels n.e.c."])
-})), d3.csv("../datasources/ipcc-cleaned.csv", null, data => ({
+})), d3.csv("datasources/ipcc-cleaned.csv", null, data => ({
   Field: data["Technology"],
   Combustible: average(toFloat(data["Coal—Pulverized "]), toFloat(data["Gas—Combined Cycle"]), toFloat(data["Biomass—cofiring "]), toFloat(data["Biomass—dedicated "])),
   Hydro: toFloat(data["Hydropower "]),
@@ -24,7 +24,7 @@ Promise.all([d3.csv("../datasources/eurostat-2019-cleaned.csv", null, data => ({
   Solar: average(toFloat(data["Solar PV—rooftop"]), toFloat(data["Solar PV—utility"])),
   Ocean: toFloat(data["Ocean"]),
   Nuclear: toFloat(data["Nuclear "])
-})), d3.csv("../datasources/Euro_6_latest.csv", null, data => ({
+})), d3.csv("datasources/Euro_6_latest.csv", null, data => ({
   Fuel: data["Fuel Type"],
   Emissions: toFloat(data["WLTP CO2"]) || 0,
   // gCo2e/km

@@ -1,14 +1,14 @@
 const pointFill = "#777";
-let selectedCity = null; // d3.csv("../datasources/worldcities.csv").then((data) => console.log(toBase64(data)));
+let selectedCity = null; // d3.csv("datasources/worldcities.csv").then((data) => console.log(toBase64(data)));
 // console.log(fromBase64(ipcc))
 
-Promise.all([d3.json("../datasources/uk.json"), d3.csv("../datasources/worldcities.csv", null, data => ({
+Promise.all([d3.json("datasources/uk.json"), d3.csv("datasources/worldcities.csv", null, data => ({
   name: data.city,
   lat: data.lat,
   lng: data.lng,
   population: data.population,
   country: data.iso3
-})), d3.json("../datasources/chargepoints.json")]).then(files => {
+})), d3.json("datasources/chargepoints.json")]).then(files => {
   const uk = files[0];
   const countries = topojson.feature(uk, uk.objects.subunits);
   const cities = topojson.feature(uk, uk.objects.places);

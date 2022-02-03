@@ -3,17 +3,17 @@ const toDate1 = s => {
   return new Date(matches[3], matches[2], matches[1]);
 };
 
-Promise.all([d3.csv("../datasources/fuel-cleaned.csv", null, data => ({
+Promise.all([d3.csv("datasources/fuel-cleaned.csv", null, data => ({
   Date: toDate1(data["Date"]),
   Petrol: toFloat(data["ULSP pump"]),
   Diesel: toFloat(data["ULSD pump"])
-})), d3.csv("../datasources/Euro_6_latest.csv", null, data => ({
+})), d3.csv("datasources/Euro_6_latest.csv", null, data => ({
   Fuel: data["Fuel Type"],
   FuelConsumption: toFloat(data["WLTP Metric Combined"]) / 100 || 0,
   // litres / km
   ElectricityConsumption: toFloat(data["wh/km"]) || 0 // wh / km
 
-})), d3.csv("../datasources/energy-cleaned.csv", null, data => ({
+})), d3.csv("datasources/energy-cleaned.csv", null, data => ({
   Year: new Date(+data["Year"], 7, 1),
   UnitCost: toFloat(data["Average variable unit price (£/kWh)"]) * 100 // pence / kWh
 
