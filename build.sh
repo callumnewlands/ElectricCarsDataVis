@@ -2,13 +2,13 @@
 # Run in Coursework/ inside the bash shell on Windows
 # set -x #echo on
 
-npx babel chart1.js --out-file out/chart1-compiled.js
-npx babel chart2.js --out-file out/chart2-compiled.js
-npx babel chart3.js --out-file out/chart3-compiled.js
-npx babel loadSources.js --out-file out/loadSources-compiled.js
+npx babel src/chart1.js --out-file out/chart1-compiled.js
+npx babel src/chart2.js --out-file out/chart2-compiled.js
+npx babel src/chart3.js --out-file out/chart3-compiled.js
+npx babel src/loadSources.js --out-file out/loadSources-compiled.js
 
-cp index.html out/index.html
-cp style.css out/style.css
+cp src/index.html out/index.html
+cp src/style.css out/style.css
 cp -R datasources out/datasources
 
 code=chart1-compiled.js
