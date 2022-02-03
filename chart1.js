@@ -2,11 +2,8 @@ const toFloat = (s) => parseFloat(s.replaceAll(",", ""));
 const average = (...vs) => vs.reduce((a, b) => a + b) / vs.length || 0;
 const colours = ["#003f5c", "#bc5090", "#ffa600", "#58508d", "#ff6361"];
 
-const toBase64 = (data) => btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-const fromBase64 = (str) => JSON.parse(atob(str));
-
 Promise.all([
-	fromBase64(eurostat).map((data) => ({
+	d3.csv("datasources/eurostat-2019-cleaned.csv", null, (data) => ({
 		Country: data["SIEC (Labels)"],
 		Total: toFloat(data["Total"]), // Gross electricity production (kWh)
 		Combustible: toFloat(data["Combustible fuels"]),
@@ -22,22 +19,23 @@ Promise.all([
 			toFloat(data["Other fuels n.e.c."]),
 	})),
 
-	fromBase64(ipcc).map((data) => ({
+	d3.csv("datasources/ipcc-cleaned.csv", null, (data) => ({
 		Field: data["Technology"],
 		Combustible: average(
-			toFloat(data["CoalâPulverized "]),
-			toFloat(data["GasâCombined Cycle"]),
-			toFloat(data["Biomassâcofiring "]),
-			toFloat(data["Biomassâdedicated "])
+			toFloat(data["Coal—Pulverized "]),
+			toFloat(data["Gas—Combined Cycle"]),
+			toFloat(data["Biomass—cofiring "]),
+			toFloat(data["Biomass—dedicated "])
 		),
 		Hydro: toFloat(data["Hydropower "]),
 		Geothermal: toFloat(data["Geothermal "]),
 		Wind: average(toFloat(data["Wind onshore"]), toFloat(data["Wind offshore"])),
-		Solar: average(toFloat(data["Solar PVârooftop"]), toFloat(data["Solar PVâutility"])),
+		Solar: average(toFloat(data["Solar PV—rooftop"]), toFloat(data["Solar PV—utility"])),
 		Ocean: toFloat(data["Ocean"]),
 		Nuclear: toFloat(data["Nuclear "]),
 	})),
-	fromBase64(euroLatest).map((data) => ({
+
+	d3.csv("datasources/Euro_6_latest.csv", null, (data) => ({
 		Fuel: data["Fuel Type"],
 		Emissions: toFloat(data["WLTP CO2"]) || 0, // gCo2e/km
 		ElectricityConsumption: toFloat(data["wh/km"]) || 0,

@@ -5,21 +5,21 @@ const toDate1 = (s) => {
 
 
 Promise.all([
-	fromBase64(fuel).map((data) => ({
+	d3.csv("datasources/fuel-cleaned.csv", null, (data) => ({
 		Date: toDate1(data["Date"]),
 		Petrol: toFloat(data["ULSP pump"]),
 		Diesel: toFloat(data["ULSD pump"]),
 	})),
 
-	fromBase64(euroLatest).map((data) => ({
+	d3.csv("datasources/Euro_6_latest.csv", null, (data) => ({
 		Fuel: data["Fuel Type"],
 		FuelConsumption: toFloat(data["WLTP Metric Combined"]) / 100 || 0, // litres / km
 		ElectricityConsumption: toFloat(data["wh/km"]) || 0, // wh / km
 	})),
 
-	fromBase64(energy).map((data) => ({
+	d3.csv("datasources/energy-cleaned.csv", null, (data) => ({
 		Year: new Date(+data["Year"], 7, 1),
-		UnitCost: toFloat(data["Average variable unit price (Â£/kWh)"]) * 100, // pence / kWh
+		UnitCost: toFloat(data["Average variable unit price (£/kWh)"]) * 100, // pence / kWh
 	})),
 ]).then((files) => {
 	const margin = {top: 15, right: 20, bottom: 10, left: 60};

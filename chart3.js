@@ -6,16 +6,15 @@ let selectedCity = null;
 // console.log(fromBase64(ipcc))
 
 Promise.all([
-	// https://bost.ocks.org/mike/map/uk.json
-	fromBase64(ukMap),
-	fromBase64(worldcities).map((data) => ({
+	d3.json("datasources/uk.json"),
+	d3.csv("datasources/worldcities.csv", null, (data) => ({
 		name: data.city,
 		lat: data.lat,
 		lng: data.lng,
 		population: data.population,
 		country: data.iso3,
 	})),
-	fromBase64(chargepointsData),
+	d3.json("datasources/chargepoints.json"),
 ]).then((files) => {
 	const uk = files[0];
 	const countries = topojson.feature(uk, uk.objects.subunits);
