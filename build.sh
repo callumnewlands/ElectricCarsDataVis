@@ -3,15 +3,13 @@
 # set -x #echo on
 
 npx babel chart1.js --out-file out/chart1-compiled.js
-sed -i 's/datasources\//..\/datasources\//g' out/chart1-compiled.js
 npx babel chart2.js --out-file out/chart2-compiled.js
-sed -i 's/datasources\//..\/datasources\//g' out/chart2-compiled.js
 npx babel chart3.js --out-file out/chart3-compiled.js
-sed -i 's/datasources\//..\/datasources\//g' out/chart3-compiled.js
 npx babel loadSources.js --out-file out/loadSources-compiled.js
 
 cp index.html out/index.html
 cp style.css out/style.css
+cp -R /datasources /out/datasources
 
 code=chart1-compiled.js
 awk -i inplace -v REP="src=\"$code\"" '{
