@@ -3,7 +3,7 @@ Completed for my [Part 4 Data Visualisation](https://www.southampton.ac.uk/cours
 
 ## Production Environment
 
-The completed visualisation is available at: [https://callumnewlands.github.io/comp6234-coursework/](https://callumnewlands.github.io/comp6234-coursework/)
+The completed visualisation is available at: [https://callumnewlands.github.io/ElectricCarsDataVis/](https://callumnewlands.github.io/ElectricCarsDataVis/)
 
 The report on my visualisations can be found in ```Report.pdf```
 
