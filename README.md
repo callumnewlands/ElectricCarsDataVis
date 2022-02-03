@@ -5,7 +5,7 @@ The completed visualisation is available at: [https://callumnewlands.github.io/c
 
 The report on my visualisations can be found in ```Report.pdf```
 
-![Screenshot of a chart from the visualiusation](https://github.com/callumnewlands/ElectricCarsDataVis/blob/main/Figures/chart1.png)
+![Screenshots of some of the charts in my data story](https://github.com/callumnewlands/ElectricCarsDataVis/blob/main/Figures/screenshots.png)
 
 ## Prerequisistes
 
