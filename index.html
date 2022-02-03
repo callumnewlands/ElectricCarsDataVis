@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Are Electric Vehicles Viable in 2021?</title>
+		<script src="https://d3js.org/d3.v6.min.js"></script>
+		<script src="https://d3js.org/topojson.v1.min.js"></script>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<div class="container">
+			<h1>Are Electric Vehicles Viable in 2021?</h1>
+
+			<h2>From 2035, the EU have proposed an effective ban on new fossil-fuel cars.</h2>
+			<p>
+				The EU have proposed a 55% cut in CO<sub>2</sub> emissions by 2030 and a 100% cut by 2035
+				<sup><a class="ref">euproposal</a></sup
+				>. This means that new fossil-fuel (and hybrid) cars would be unable to be sold within the EU, effectively limiting the
+				market to only sell electric vehicles (EVs). But are these cars actually practical and viable to own and run?
+			</p>
+
+			<h2>1. Are electric vehicles actually better for the environment?</h2>
+			<p>
+				Electric cars still produce CO<sub>2</sub> emissions: they have manufacture and transport requirements, and that's even
+				before the emissions produced by generating the electricity they need to run. With all of that taken into consideration, are
+				they even better for the environment? Does it depend on the energy production methods being used?
+			</p>
+			<div class="chartContainer">
+				<h4>Breakdown of CO<sub>2</sub>-equivalent emissions</h4>
+				<div id="chart1" class="barchart"></div>
+				<div class="sources">
+					Sources: <a class="ref">eurostat</a>, <a class="ref">ipcc</a>, <a class="ref">batteryEmissions</a>,
+					<a class="ref">vehicleEmissions</a>, <a class="ref">batteryCapacity</a>, <a class="ref">natureUpstream</a>
+				</div>
+			</div>
+			<p>
+				This chart shows that, on average, electric cars produce less than 50% of the emissions of conventional vehicles,
+				considering the vehicle and battery manufacture emissions, upstream emissions (fuel and electricity production) and the
+				vehicle exhaust emissions.
+			</p>
+			<p>
+				Poland and Iceland have been chosen as two extremes of carbon-based energy production, with Poland using 11.4% renewable
+				energy and producing 507 grams of CO<sub>2</sub>-equivalent per kilowatt-hour of electricity generated
+				(gCO<sub>2</sub>/kWh), and Iceland using 99.99% renewable energy and producing 28 gCO<sub>2</sub>/kWh. As can be seen, even
+				with a high-carbon energy grid like Poland's, the emissions produced are still significantly lower than a conventional
+				vehicle.
+			</p>
+
+			<h2>2. Are electric vehicles more expensive to run than conventional vehicles?</h2>
+			<div class="chartContainer">
+				<h4>Vehicle running cost per km over time</h4>
+				<div id="chart2" class="linechart"></div>
+				<div class="sources">
+					Sources: <a class="ref">carfuel</a>, <a class="ref">fuelprices</a>, <a class="ref">energybills</a>
+				</div>
+			</div>
+			<p>
+				Somewhat surprisingly, electric vehicles are much cheaper to run per km than conventional vehicles (around 30% of the cost).
+				And whilst this has risen slightly over the last 10 years due to rising enery prices, it still has a long way to go before
+				it catches up with the carbon-based fuels.
+			</p>
+
+			<h2>What about their much higher cost-to-buy?</h2>
+			<p>On average, electric cars cost around £49,000 wheras petrol and diesel cars cost around £17,000 and £27,000 respectively.</p>
+			<div class="chartContainer">
+				<h4>Vehicle purchase and running cost per km over time</h4>
+				<div id="chart2B" class="linechart"></div>
+				<div class="sources">
+					Sources: <a class="ref">carfuel</a>, <a class="ref">fuelprices</a>, <a class="ref">energybills</a>,
+					<a class="ref">evdatabase</a>, <a class="ref">vauxhall</a>, <a class="ref">popularDiesel</a>, <a class="ref">vwGolf</a>,
+					<a class="ref">evBatteryLife</a>, <a class="ref">conventionalLife</a>
+				</div>
+			</div>
+			<p>
+				With this cost factored in across the average lifetime of each vehicle type (100,000mi = 160,934km)
+				<sup><a class="ref">evBatteryLife</a>, <a class="ref">conventionalLife</a></sup
+				>, the electric vehicles still come out cheaper. And although they are catching up towards 2021 and the future, the price of
+				electric vehicles will likely drop in the future as they become more mainstream and their manufacture efficiency and
+				distribution is improved.
+			</p>
+
+			<h2>3. How far can electric vehicles batteries travel on a charge?</h2>
+			<p>
+				Current EV batteries can travel an average of 327km on a single charge <sup><a class="ref">evdatabase</a></sup
+				>. That's the distance from Southampton to Leeds!
+			</p>
+			<p>
+				Why not find out how far you can travel from your home town? You might be surprised!
+				<br />
+				<em>Select a city on the map to start:</em>
+			</p>
+			<div class="chartContainer">
+				<div id="chart3" class="mapchart"></div>
+				<div class="sources">
+					Sources: <a class="ref">evdatabase</a>, <a class="ref">chargepoints</a>, <a class="ref">cities</a>,
+					<a class="ref">mapgeo</a>
+				</div>
+			</div>
+
+			<h2>Conclusion</h2>
+			<p>
+				Electric vehicles are more viable than ever before. They are much better for the environment than conventional vehicles, and
+				cheaper to run, even when you factor in the higher inital cost. Production costs and battery capacities are likely to
+				improve in the near future, and you can already travel 1/3 of the length of the UK on a single battery charge, with more
+				than 17,000 locations with chargepoints for those longer journeys.
+			</p>
+
+			<h4>Sources:</h4>
+			<div id="sourcesList"></div>
+		</div>
+		<script src="chart1-compiled.js"></script>
+		<script src="chart2-compiled.js"></script>
+		<script src="chart3-compiled.js"></script>
+		<script src="loadSources-compiled.js"></script>
+	</body>
+</html>
